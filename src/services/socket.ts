@@ -55,11 +55,19 @@ export interface ClientToServerEvents {
 export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
 // --- Singleton ---
+// autoConnect: false — conexão iniciada explicitamente via connectSocket()
+// para permitir controle do ciclo de vida e facilitar testes
 
 export const socket: TypedSocket = io(BACKEND_URL, {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   timeout: 10000,
-  autoConnect: true,
+  autoConnect: false,
 })
+
+export function connectSocket(): void {
+  if (!socket.connected) {
+    socket.connect()
+  }
+}

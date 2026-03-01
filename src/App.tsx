@@ -4,6 +4,7 @@ import type { ConnectionStatus } from './hooks/useSocket'
 const STATUS_COLOR: Record<ConnectionStatus, string> = {
   connecting: '#f59e0b',
   connected: '#00ff41',
+  reconnecting: '#f59e0b',
   disconnected: '#6b7280',
   error: '#ef4444',
 }
@@ -11,6 +12,7 @@ const STATUS_COLOR: Record<ConnectionStatus, string> = {
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
   connecting: 'conectando...',
   connected: 'conectado',
+  reconnecting: 'reconectando...',
   disconnected: 'desconectado',
   error: 'erro de conexão',
 }
