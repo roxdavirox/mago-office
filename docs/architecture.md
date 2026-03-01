@@ -1,82 +1,103 @@
 # Architecture Overview
 
-## Diagrama completo
+## Visão geral
+
+O `mago-office` é um **app React standalone** que se conecta ao backend MAGO existente como cliente externo. Não modifica o MAGO — apenas consome os eventos Socket.io e endpoints REST já disponíveis.
+
+## Diagrama
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     MAGO Platform                           │
-│                                                             │
-│  ┌─────────────────────┐   ┌──────────────────────────┐   │
-│  │   Flowday Web       │   │   Flowday Backend        │   │
-│  │   (React 19 + Vite) │   │   (Express + Socket.io)  │   │
-│  │                     │   │                          │   │
-│  │  /app/office ───────┼───┼─→ GET /office/state      │   │
-│  │   OfficePage        │   │   office:join            │   │
-│  │   OfficeCanvas      │◄──┼───office:user:joined     │   │
-│  │   AgentAvatar       │   │   office:user:moved      │   │
-│  │   HumanAvatar       │───┼──►office:user:move       │   │
-│  │   AgentDetailPanel  │   │                          │   │
-│  └─────────────────────┘   └──────────┬───────────────┘   │
-│                                        │                    │
-│  ┌─────────────────────────────────────▼──────────────┐   │
-│  │                MAGO Agents                          │   │
-│  │                                                     │   │
-│  │  agent-1 (Claude)    ──► agent:status:updated      │   │
-│  │  agent-2 (Gemini)    ──► bus:message               │   │
-│  │  agent-3 (OpenCode)  ──► board:item:moved          │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐   │
-│  │ Celebro      │  │ Flowday DB   │  │ Redis          │   │
-│  │ Gateway:3099 │  │ (SQLite)     │  │ (Message Bus)  │   │
-│  └──────────────┘  └──────────────┘  └────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│           mago-office (standalone)            │
+│                                              │
+│  React 19 + Vite   →  office.iae.wtf         │
+│                                              │
+│  App.tsx                                     │
+│   └── OfficeCanvas.tsx                       │
+│        ├── OfficeRoom.tsx × 6                │
+│        │    ├── AgentAvatar.tsx              │
+│        │    │    └── SpeechBubble.tsx        │
+│        │    └── HumanAvatar.tsx (draggable)  │
+│        └── AgentDetailPanel.tsx (slide-in)   │
+│                                              │
+│  hooks/useOfficeState.ts                     │
+│   ├── REST: GET /api/dashboard/agents        │
+│   └── Socket.io: agent:status:updated        │
+│                  bus:message                 │
+│                  office:user:*               │
+└──────────────────┬───────────────────────────┘
+                   │  Socket.io-client
+                   │  REST (fetch)
+                   ▼
+┌──────────────────────────────────────────────┐
+│        MAGO Backend (localhost:3002)          │
+│                                              │
+│  Eventos emitidos (já existentes):           │
+│  • agent:status:updated                      │
+│  • bus:message                               │
+│  • board:item:moved                          │
+│  • office:user:joined / moved / left         │
+│                                              │
+│  Endpoints REST:                             │
+│  • GET /api/dashboard/agents                 │
+│  • POST /api/office/join (emite para room)   │
+└──────────────────────────────────────────────┘
 ```
 
 ## Fluxo de dados
 
-### Carga inicial da Office View
-1. Usuário navega para `/app/office`
-2. `useOfficeState` hook monta e chama `GET /api/office/state`
-3. Backend retorna snapshot: agentes (do DB) + usuários online (in-memory)
-4. Socket emite `office:join` com userId e nome
-5. Backend adiciona usuário ao `officeState.users` Map
-6. Backend broadcast `office:user:joined` para room `office:view`
+### Carga inicial
+1. App monta → `useOfficeState` chama `GET /api/dashboard/agents`
+2. Retorna snapshot dos 3 agentes com status + lastAction
+3. `getAgentZone(status, lastAction)` calcula zona de cada agente
+4. Socket conecta e emite `office:join` com userId do usuário humano
+5. Backend broadcast `office:user:joined` → outros clientes recebem
 
 ### Atualização de agente em tempo real
-1. MAGO agent-3 termina uma tarefa → `PATCH /api/items/:id/move`
-2. Board service dispara `boardEvents.emit('item:moved', ...)`
-3. Socket.io emite `board:item:moved` para todos os clientes
-4. `useOfficeState` recebe `agent:status:updated`
-5. `getAgentZone(status, lastAction)` calcula nova zona
-6. `AgentAvatar` anima transição de posição (Framer Motion layout)
+1. MAGO agent muda de estado → backend emite `agent:status:updated`
+2. `useOfficeState` recebe → recalcula zona
+3. `AgentAvatar` anima transição (Framer Motion `layoutId`)
 
-### Movimentação de usuário humano
-1. Usuário arrasta `HumanAvatar` no canvas
-2. `onDragEnd` calcula nova posição em %
-3. `socket.emit('office:user:move', { x, y })`
-4. Backend atualiza Map e broadcast `office:user:moved`
-5. Outros clientes recebem e animam avatar do usuário
+### Movimentação humana
+1. Usuário arrasta `HumanAvatar`
+2. `onDragEnd` emite `office:user:move` com `{ x, y }`
+3. Outros clientes recebem `office:user:moved` e animam
 
-## Estrutura de arquivos (Office View)
+## Estrutura de arquivos
 
 ```
-apps/
-├── flowday-backend/src/
-│   ├── index.ts                    ← +socket events office:*
-│   └── routes/office.routes.ts     ← GET /office/state
-│
-└── flowday-web/src/pages/office/
-    ├── OfficePage.tsx              ← page principal
-    ├── OfficeCanvas.tsx            ← container 2D
-    ├── data/
-    │   └── office-layout.ts        ← zonas + getAgentZone()
-    ├── hooks/
-    │   └── useOfficeState.ts       ← estado central
-    └── components/
-        ├── OfficeRoom.tsx          ← zona visual
-        ├── AgentAvatar.tsx         ← avatar agente IA
-        ├── HumanAvatar.tsx         ← avatar humano (draggable)
-        ├── SpeechBubble.tsx        ← balão de atividade
-        └── AgentDetailPanel.tsx    ← painel de detalhes
+mago-office/
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── HackerMode.tsx
+│   ├── services/
+│   │   └── socket.ts              ← conexão Socket.io-client
+│   ├── data/
+│   │   └── office-layout.ts       ← zonas + getAgentZone()
+│   ├── hooks/
+│   │   ├── useOfficeState.ts      ← estado central (REST + socket)
+│   │   └── useHackerMode.ts
+│   └── components/
+│       ├── OfficeCanvas.tsx
+│       ├── OfficeRoom.tsx
+│       ├── AgentAvatar.tsx
+│       ├── SpeechBubble.tsx
+│       ├── HumanAvatar.tsx
+│       └── AgentDetailPanel.tsx
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+├── package.json
+└── .github/
+    └── workflows/
+        ├── ci.yml                 ← typecheck + lint + test + build
+        └── deploy.yml             ← SSH → VPS → nginx office.iae.wtf
 ```
+
+## Deploy
+
+- **URL**: https://office.iae.wtf
+- **VPS**: 147.79.111.174 — `/home/rx/lab/mago-office/dist/`
+- **Trigger**: push em `main` → GitHub Actions → SSH → `pnpm build` → nginx
+- **Nginx**: serve `dist/` com `try_files $uri /index.html` (SPA)
