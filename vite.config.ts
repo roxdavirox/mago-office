@@ -1,7 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import type { UserConfig } from 'vitest/config'
+
+const testConfig: UserConfig['test'] = {
+  environment: 'jsdom',
+  globals: true,
+}
 
 export default defineConfig({
+  // @ts-expect-error vitest injeta `test` no config do vite em runtime
+  test: testConfig,
   plugins: [react()],
   server: {
     port: 3010,
