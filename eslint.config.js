@@ -29,6 +29,7 @@ export default [
         EventTarget: 'readonly',
         AbortController: 'readonly',
         KeyboardEvent: 'readonly',
+        localStorage: 'readonly',
         React: 'readonly',
         JSX: 'readonly',
         import: 'readonly',

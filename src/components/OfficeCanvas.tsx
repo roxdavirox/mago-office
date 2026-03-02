@@ -3,6 +3,7 @@ import { OFFICE_ZONES } from '../data/office-layout'
 import { OfficeRoom } from './OfficeRoom'
 import { OfficeHUD } from './OfficeHUD'
 import type { ConnectionStatus } from '../hooks/useSocket'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface OfficeCanvasProps {
   children?: ReactNode
@@ -11,17 +12,7 @@ interface OfficeCanvasProps {
   humanCount?: number
   /** Ref para o elemento raiz — usado como dragConstraints pelo HumanAvatar */
   canvasRef?: RefObject<HTMLDivElement | null>
-}
-
-const GRID_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  backgroundImage: `
-    radial-gradient(circle, #1f2937 1px, transparent 1px)
-  `,
-  backgroundSize: '28px 28px',
-  opacity: 0.4,
-  pointerEvents: 'none',
+  onToggleHackerMode?: () => void
 }
 
 export function OfficeCanvas({
@@ -30,7 +21,22 @@ export function OfficeCanvas({
   agentCount = 0,
   humanCount = 0,
   canvasRef,
+  onToggleHackerMode,
 }: OfficeCanvasProps) {
+  const theme = useTheme()
+
+  const gridStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: theme.isHackerMode
+      ? `repeating-linear-gradient(0deg, ${theme.grid}0d 0px, transparent 1px, transparent 27px, ${theme.grid}0d 28px),
+         repeating-linear-gradient(90deg, ${theme.grid}0d 0px, transparent 1px, transparent 27px, ${theme.grid}0d 28px)`
+      : `radial-gradient(circle, #1f2937 1px, transparent 1px)`,
+    backgroundSize: '28px 28px',
+    opacity: theme.isHackerMode ? 1 : 0.4,
+    pointerEvents: 'none',
+  }
+
   return (
     <div
       ref={canvasRef}
@@ -38,13 +44,14 @@ export function OfficeCanvas({
         position: 'relative',
         width: '100%',
         height: '100vh',
-        background: '#0d1117',
+        background: theme.bg,
         overflow: 'hidden',
         fontFamily: 'JetBrains Mono, monospace',
+        transition: 'background 0.4s ease',
       }}
     >
-      {/* Grid decorativo de fundo */}
-      <div style={GRID_STYLE} />
+      {/* Grid decorativo */}
+      <div style={gridStyle} />
 
       {/* Zonas do escritório */}
       {OFFICE_ZONES.map(zone => (
@@ -59,6 +66,7 @@ export function OfficeCanvas({
         connectionStatus={connectionStatus}
         agentCount={agentCount}
         humanCount={humanCount}
+        onToggleHackerMode={onToggleHackerMode}
       />
     </div>
   )
