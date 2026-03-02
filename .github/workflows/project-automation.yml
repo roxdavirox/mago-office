@@ -2,15 +2,19 @@ name: Project Automation
 
 on:
   issues:
-    types: [opened, reopened, closed]
+    types: [opened, reopened, closed, labeled]
   pull_request:
     types: [opened, reopened, closed, ready_for_review]
+  discussion:
+    types: [created]
 
 env:
   PROJECT_ID: PVT_kwHOAPDgbs4BQglq
   # Status
   STATUS_FIELD_ID: PVTSSF_lAHOAPDgbs4BQglqzg-m2Sc
+  STATUS_BACKLOG: 8df12426
   STATUS_TODO: 532fc3d8
+  STATUS_IN_PROGRESS: b894fbad
   STATUS_IN_REVIEW: c999db95
   STATUS_DONE: c841d7a3
   # Priority
@@ -19,14 +23,21 @@ env:
   PRIORITY_HIGH: e9333909
   PRIORITY_MEDIUM: 8cb7a262
   PRIORITY_LOW: 373ced67
+  # Size
+  SIZE_FIELD_ID: PVTSSF_lAHOAPDgbs4BQglqzg-nNnU
+  SIZE_XS: c4ee0f78
+  SIZE_S: 8a34ec7b
+  SIZE_M: fbe25f78
+  SIZE_L: c15fe1d4
+  SIZE_XL: dcefc6fd
 
 jobs:
   automate:
     name: Atualizar board
     runs-on: ubuntu-latest
     permissions:
-      issues: read
-      pull-requests: read
+      issues: write
+      pull-requests: write
 
     steps:
       - name: Obter token
@@ -39,7 +50,14 @@ jobs:
 
       - name: Usar PAT como fallback
         if: steps.token.outcome == 'failure'
-        run: echo "GH_TOKEN=${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+        # GITHUB_TOKEN não tem scope 'project' — requer GH_PAT com project:write
+        run: |
+          if [ -z "${{ secrets.GH_PAT }}" ]; then
+            echo "⚠️  GH_PAT não configurado. Automações do board não funcionarão."
+            echo "   Configure o secret GH_PAT com scope: project, repo"
+            exit 1
+          fi
+          echo "GH_TOKEN=${{ secrets.GH_PAT }}" >> $GITHUB_ENV
 
       - name: Definir token
         if: steps.token.outcome == 'success'
@@ -305,3 +323,97 @@ jobs:
             }
           ' -f projectId="$PROJECT_ID" -f itemId="$PR_ITEM_ID" \
             -f fieldId="$STATUS_FIELD_ID" -f value="$STATUS_DONE"
+
+      # ── Issue etiquetada → atualizar Priority ou Size ─────────────────────
+      - name: Issue etiquetada → Priority ou Size
+        if: github.event_name == 'issues' && github.event.action == 'labeled'
+        env:
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+          LABEL_NAME: ${{ github.event.label.name }}
+        run: |
+          # Garantir que a issue está no board e obter item_id
+          ITEM_ID=$(gh api graphql -f query='
+            mutation($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item { id }
+              }
+            }
+          ' -f projectId="$PROJECT_ID" -f contentId="$ISSUE_ID" \
+            --jq '.data.addProjectV2ItemById.item.id')
+
+          # Priority
+          if [[ "$LABEL_NAME" == priority:* ]]; then
+            case "${LABEL_NAME#priority:}" in
+              urgent) FIELD_VALUE="$PRIORITY_URGENT" ;;
+              high)   FIELD_VALUE="$PRIORITY_HIGH"   ;;
+              medium) FIELD_VALUE="$PRIORITY_MEDIUM" ;;
+              low)    FIELD_VALUE="$PRIORITY_LOW"    ;;
+              *)      FIELD_VALUE="" ;;
+            esac
+            if [ -n "$FIELD_VALUE" ]; then
+              gh api graphql -f query='
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId itemId: $itemId fieldId: $fieldId
+                    value: { singleSelectOptionId: $value }
+                  }) { projectV2Item { id } }
+                }
+              ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" \
+                -f fieldId="$PRIORITY_FIELD_ID" -f value="$FIELD_VALUE"
+              echo "Priority → ${LABEL_NAME#priority:}"
+            fi
+          fi
+
+          # Size
+          if [[ "$LABEL_NAME" == size:* ]]; then
+            case "${LABEL_NAME#size:}" in
+              xs) FIELD_VALUE="$SIZE_XS" ;;
+              s)  FIELD_VALUE="$SIZE_S"  ;;
+              m)  FIELD_VALUE="$SIZE_M"  ;;
+              l)  FIELD_VALUE="$SIZE_L"  ;;
+              xl) FIELD_VALUE="$SIZE_XL" ;;
+              *)  FIELD_VALUE="" ;;
+            esac
+            if [ -n "$FIELD_VALUE" ]; then
+              gh api graphql -f query='
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId itemId: $itemId fieldId: $fieldId
+                    value: { singleSelectOptionId: $value }
+                  }) { projectV2Item { id } }
+                }
+              ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" \
+                -f fieldId="$SIZE_FIELD_ID" -f value="$FIELD_VALUE"
+              echo "Size → ${LABEL_NAME#size:}"
+            fi
+          fi
+
+      # ── Discussion criada → Backlog ───────────────────────────────────────
+      - name: Discussion criada → Backlog
+        if: github.event_name == 'discussion' && github.event.action == 'created'
+        env:
+          DISCUSSION_ID: ${{ github.event.discussion.node_id }}
+        run: |
+          ITEM_ID=$(gh api graphql -f query='
+            mutation($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item { id }
+              }
+            }
+          ' -f projectId="$PROJECT_ID" -f contentId="$DISCUSSION_ID" \
+            --jq '.data.addProjectV2ItemById.item.id') || true
+
+          if [ -n "$ITEM_ID" ]; then
+            gh api graphql -f query='
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId itemId: $itemId fieldId: $fieldId
+                  value: { singleSelectOptionId: $value }
+                }) { projectV2Item { id } }
+              }
+            ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" \
+              -f fieldId="$STATUS_FIELD_ID" -f value="$STATUS_BACKLOG" || true
+            echo "Discussion → Backlog"
+          else
+            echo "Discussion não pôde ser adicionada ao board (API pode não suportar)"
+          fi
