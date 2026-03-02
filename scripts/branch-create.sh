@@ -72,16 +72,10 @@ if [[ -n "$ISSUE_NODE" ]]; then
   fi
 fi
 
-# ── Consultar rx-architect para estimativa ────────────────────────────────────
-CELEBRO_URL="${CELEBRO_URL:-http://localhost:3099/chat}"
-if curl -s --connect-timeout 2 "$CELEBRO_URL" > /dev/null 2>&1; then
-  echo ""
-  echo "🏗️  Consultando rx-architect..."
-  bash "$(dirname "$0")/mago-estimate.sh" "$ISSUE" --board --comment 2>/dev/null \
-    || echo "⚠️  rx-architect indisponível (continuando sem estimativa)"
-else
-  echo "⚠️  Celebro offline — estimativa pulada"
-fi
+# ── Consultar rx-architect para estimativa (Celebro ou OpenCode) ──────────────
+echo ""
+bash "$(dirname "$0")/mago-estimate.sh" "$ISSUE" --board --comment 2>/dev/null \
+  || echo "⚠️  Estimativa indisponível (continuando)"
 
 echo ""
 echo "Próximo: implemente, commite e rode ./scripts/pr-create.sh $ISSUE"

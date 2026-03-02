@@ -165,7 +165,9 @@ $REVIEW
   EXISTING_IDS=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
     --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | startswith("## 🤖 AI Code Review")) | .id')
   for CID in $EXISTING_IDS; do
-    gh api -X DELETE "repos/$REPO/issues/comments/$CID" && echo "🗑️  Comentário anterior removido ($CID)"
+    gh api -X DELETE "repos/$REPO/issues/comments/$CID" \
+      && echo "🗑️  Comentário anterior removido ($CID)" \
+      || echo "⚠️  Não foi possível remover comentário anterior ($CID)"
   done
 
   gh pr comment "$PR_NUMBER" --body "$FORMAT_REVIEW"

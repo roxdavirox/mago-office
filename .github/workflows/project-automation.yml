@@ -50,14 +50,8 @@ jobs:
 
       - name: Usar PAT como fallback
         if: steps.token.outcome == 'failure'
-        # GITHUB_TOKEN não tem scope 'project' — requer GH_PAT com project:write
-        run: |
-          if [ -z "${{ secrets.GH_PAT }}" ]; then
-            echo "⚠️  GH_PAT não configurado. Automações do board não funcionarão."
-            echo "   Configure o secret GH_PAT com scope: project, repo"
-            exit 1
-          fi
-          echo "GH_TOKEN=${{ secrets.GH_PAT }}" >> $GITHUB_ENV
+        # GH_PAT precisa ter scope 'project' — GITHUB_TOKEN não tem
+        run: echo "GH_TOKEN=${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: Definir token
         if: steps.token.outcome == 'success'
