@@ -1,11 +1,17 @@
+import { useRef } from 'react'
 import { useSocket } from './hooks/useSocket'
 import { useOfficeState } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
+import { HumanAvatar } from './components/HumanAvatar'
+import { socket } from './services/socket'
 
 export function App() {
   const { status } = useSocket()
   const { agents, users } = useOfficeState()
+  const canvasRef = useRef<HTMLDivElement>(null)
+
+  const mySocketId = socket.id ?? null
 
   return (
     <>
@@ -13,9 +19,18 @@ export function App() {
         connectionStatus={status}
         agentCount={agents.filter(a => a.status !== 'offline').length}
         humanCount={users.length}
+        canvasRef={canvasRef}
       >
         {agents.map(agent => (
           <AgentAvatar key={agent.id} agent={agent} />
+        ))}
+        {users.map(user => (
+          <HumanAvatar
+            key={user.socketId}
+            user={user}
+            isMe={user.socketId === mySocketId}
+            canvasRef={canvasRef}
+          />
         ))}
       </OfficeCanvas>
 
