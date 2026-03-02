@@ -1,0 +1,75 @@
+import { memo } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+
+interface SpeechBubbleProps {
+  text: string | null
+  color: string
+}
+
+const MAX_LENGTH = 40
+
+const variants = {
+  hidden: { scale: 0, opacity: 0, y: 8 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  },
+  exit: { scale: 0, opacity: 0, transition: { duration: 0.2 } },
+}
+
+export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBubbleProps) {
+  const truncated = text && text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH)}…` : text
+
+  return (
+    <AnimatePresence>
+      {truncated && (
+        <motion.div
+          key={truncated}
+          variants={variants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 8px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            maxWidth: 180,
+            padding: '5px 8px',
+            background: 'rgba(15, 23, 42, 0.92)',
+            border: `1px solid ${color}80`,
+            borderRadius: 6,
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 10,
+            color: '#c9d1d9',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+            pointerEvents: 'none',
+            zIndex: 10,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          {truncated}
+          {/* Seta apontando para baixo */}
+          <span
+            data-testid="speech-arrow"
+            style={{
+              position: 'absolute',
+              bottom: -5,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: `5px solid ${color}80`,
+            }}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+})

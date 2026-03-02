@@ -1,12 +1,24 @@
 import { useSocket } from './hooks/useSocket'
+import { useOfficeState } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
+import { AgentAvatar } from './components/AgentAvatar'
 
 export function App() {
   const { status } = useSocket()
+  const { agents, users } = useOfficeState()
 
   return (
     <>
-      <OfficeCanvas connectionStatus={status} />
+      <OfficeCanvas
+        connectionStatus={status}
+        agentCount={agents.filter(a => a.status !== 'offline').length}
+        humanCount={users.length}
+      >
+        {agents.map(agent => (
+          <AgentAvatar key={agent.id} agent={agent} />
+        ))}
+      </OfficeCanvas>
+
       <div
         style={{
           position: 'fixed',
@@ -19,7 +31,7 @@ export function App() {
           userSelect: 'none',
         }}
       >
-        v0.2 — office map
+        v0.3 — agent avatars
       </div>
     </>
   )
