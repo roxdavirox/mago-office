@@ -1,0 +1,78 @@
+#!/bin/bash
+# Cria PR com labels e milestone herdados da issue vinculada
+# Uso: ./scripts/pr-create.sh [issue-number]
+
+set -e
+
+cd /home/rx/lab/mago-office
+
+BRANCH=$(git branch --show-current)
+
+if [[ -n "$1" ]]; then
+  ISSUE=$1
+else
+  ISSUE=$(echo "$BRANCH" | grep -oP 'issue-\K\d+' || echo "")
+fi
+
+if [[ -z "$ISSUE" ]]; then
+  echo "Aviso: Nenhum issue number encontrado na branch: $BRANCH"
+  echo "Uso: $0 <issue-number>"
+  exit 1
+fi
+
+echo "==> Buscando dados da issue #$ISSUE..."
+
+ISSUE_LABELS=$(gh issue view "$ISSUE" --repo roxdavirox/mago-office --json labels -q '.labels[].name' 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+MILESTONE=$(gh issue view "$ISSUE" --repo roxdavirox/mago-office --json milestone -q '.milestone.title' 2>/dev/null || echo "")
+ISSUE_BODY=$(gh issue view "$ISSUE" --repo roxdavirox/mago-office --json body -q '.body' 2>/dev/null || echo "")
+
+TYPE=$(echo "$BRANCH" | cut -d'/' -f1)
+case $TYPE in
+  feat)  EXTRA_LABELS="enhancement" ;;
+  fix)   EXTRA_LABELS="bug" ;;
+  test)  EXTRA_LABELS="test" ;;
+  chore) EXTRA_LABELS="dx" ;;
+  ci)    EXTRA_LABELS="ci" ;;
+  *)     EXTRA_LABELS="" ;;
+esac
+
+if [[ -n "$ISSUE_LABELS" && -n "$EXTRA_LABELS" ]]; then
+  LABELS=$(echo "$ISSUE_LABELS,$EXTRA_LABELS" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
+elif [[ -n "$ISSUE_LABELS" ]]; then
+  LABELS="$ISSUE_LABELS"
+else
+  LABELS="$EXTRA_LABELS"
+fi
+
+TITLE=$(git log -1 --format=%s)
+
+if ! git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+  echo "==> Push da branch..."
+  git push -u origin "$BRANCH"
+fi
+
+PR_BODY="Closes #$ISSUE"
+if [[ -n "$ISSUE_BODY" ]]; then
+  PR_BODY="Closes #$ISSUE
+
+## Contexto
+
+$ISSUE_BODY"
+fi
+
+echo ""
+echo "==> Criando PR..."
+echo "  Titulo:    $TITLE"
+echo "  Labels:    ${LABELS:-nenhum}"
+echo "  Milestone: ${MILESTONE:-nenhum}"
+echo "  Issue:     #$ISSUE"
+echo ""
+
+ARGS="--title \"$TITLE\" --body \"$PR_BODY\" --base develop"
+[[ -n "$LABELS" ]] && ARGS="$ARGS --label \"$LABELS\""
+[[ -n "$MILESTONE" ]] && ARGS="$ARGS --milestone \"$MILESTONE\""
+
+eval "gh pr create $ARGS"
+
+echo ""
+echo "==> PR criada!"
