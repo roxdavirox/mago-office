@@ -8,10 +8,17 @@ on:
 
 env:
   PROJECT_ID: PVT_kwHOAPDgbs4BQglq
+  # Status
   STATUS_FIELD_ID: PVTSSF_lAHOAPDgbs4BQglqzg-m2Sc
   STATUS_TODO: 532fc3d8
   STATUS_IN_REVIEW: c999db95
   STATUS_DONE: c841d7a3
+  # Priority
+  PRIORITY_FIELD_ID: PVTSSF_lAHOAPDgbs4BQglqzg-nNm4
+  PRIORITY_URGENT: fd57bfad
+  PRIORITY_HIGH: e9333909
+  PRIORITY_MEDIUM: 8cb7a262
+  PRIORITY_LOW: 373ced67
 
 jobs:
   automate:
@@ -66,6 +73,41 @@ jobs:
             }
           ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" \
             -f fieldId="$STATUS_FIELD_ID" -f value="$STATUS_TODO"
+
+      # ── Issue aberta → Priority baseada na label priority:* ──────────────
+      - name: Issue aberta → Priority da label
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        env:
+          LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
+        run: |
+          ITEM_ID="${{ env.item_id }}"
+          if [ -z "$ITEM_ID" ]; then exit 0; fi
+
+          PRIORITY_VALUE=""
+          if echo "$LABELS" | grep -q "priority:urgent"; then
+            PRIORITY_VALUE="$PRIORITY_URGENT"
+          elif echo "$LABELS" | grep -q "priority:high"; then
+            PRIORITY_VALUE="$PRIORITY_HIGH"
+          elif echo "$LABELS" | grep -q "priority:medium"; then
+            PRIORITY_VALUE="$PRIORITY_MEDIUM"
+          elif echo "$LABELS" | grep -q "priority:low"; then
+            PRIORITY_VALUE="$PRIORITY_LOW"
+          fi
+
+          if [ -n "$PRIORITY_VALUE" ]; then
+            gh api graphql -f query='
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $value }
+                }) { projectV2Item { id } }
+              }
+            ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" \
+              -f fieldId="$PRIORITY_FIELD_ID" -f value="$PRIORITY_VALUE"
+            echo "Priority definida"
+          fi
 
       # ── Issue reaberta → Todo ─────────────────────────────────────────────
       - name: Issue reaberta → Todo
