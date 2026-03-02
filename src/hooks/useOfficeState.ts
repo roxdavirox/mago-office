@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useCallback, useRef } from 'react'
 import { getSocket } from '../services/socket'
+import type { AgentStatus as SocketAgentStatus, BusMessage as SocketBusMessage, OfficeUser } from '../services/socket'
 import {
   getAgentZone,
   getAgentPosition,
@@ -88,7 +89,7 @@ type Action =
   | { type: 'AGENT_STATUS_UPDATED'; agentId: string; status: string; lastAction: string }
   | { type: 'AGENT_SPEECH'; agentId: string; text: string }
   | { type: 'AGENT_SPEECH_CLEAR'; agentId: string }
-  | { type: 'USER_JOINED'; user: UserOfficeData }
+  | { type: 'USER_JOINED'; user: OfficeUser }
   | { type: 'USER_LEFT'; socketId: string }
   | { type: 'USER_MOVED'; socketId: string; x: number; y: number }
   | { type: 'FETCH_ERROR'; error: string }
@@ -222,26 +223,23 @@ export function useOfficeState(): OfficeState {
   useEffect(() => {
     const socket = getSocket()
 
-    const onAgentStatus = (data: { agentId: string; status: string; lastAction: string }) => {
+    const onAgentStatus = (data: SocketAgentStatus) => {
       dispatch({
         type: 'AGENT_STATUS_UPDATED',
         agentId: data.agentId,
         status: data.status,
-        lastAction: data.lastAction ?? '',
+        lastAction: data.lastAction ?? data.currentTask ?? '',
       })
     }
 
-    const onBusMessage = (data: {
-      from: string
-      payload?: { content?: string }
-    }) => {
-      const text = data.payload?.content ?? ''
+    const onBusMessage = (data: SocketBusMessage) => {
+      const text = (data.payload['content'] as string | undefined) ?? ''
       if (!text) return
       dispatch({ type: 'AGENT_SPEECH', agentId: data.from, text })
       scheduleSpeechClear(data.from)
     }
 
-    const onUserJoined = (user: UserOfficeData) => {
+    const onUserJoined = (user: OfficeUser) => {
       dispatch({ type: 'USER_JOINED', user })
     }
 
