@@ -27,6 +27,8 @@ export default [
         HTMLInputElement: 'readonly',
         HTMLButtonElement: 'readonly',
         EventTarget: 'readonly',
+        AbortController: 'readonly',
+        KeyboardEvent: 'readonly',
         React: 'readonly',
         JSX: 'readonly',
         import: 'readonly',

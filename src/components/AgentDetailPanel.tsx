@@ -27,7 +27,10 @@ const QUICK_MESSAGES = [
   'Continue normalmente',
 ]
 
-const CELEBRO_URL = 'http://localhost:3099/chat'
+const CELEBRO_URL =
+  (import.meta.env.VITE_CELEBRO_URL as string | undefined) ?? 'http://localhost:3099/chat'
+
+const FETCH_TIMEOUT_MS = 10_000
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -82,12 +85,17 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
       setIsSending(true)
       setSendFeedback(null)
 
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
       try {
         const res = await fetch(CELEBRO_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: text.trim(), context: 'office-view', agentHint: agent.id }),
+          signal: controller.signal,
         })
+        clearTimeout(timeoutId)
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
 

@@ -93,6 +93,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
           fontSize: 16,
           opacity: isOffline ? 0.35 : 1,
           boxShadow: isOffline ? 'none' : isSelected ? `0 0 0 2px ${agent.color}, 0 0 14px ${agent.color}88` : `0 0 8px ${agent.color}44`,
+          transition: 'box-shadow 0.2s ease',
         }}
       >
         {icon}
