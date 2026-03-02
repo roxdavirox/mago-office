@@ -21,8 +21,8 @@ const UserRow = memo(function UserRow({
   user: UserOfficeData
   isMe: boolean
 }) {
-  const color = hashColor(user.userId)
-  const label = initials(user.name)
+  const color = user.userId ? hashColor(user.userId) : '#6b7280'
+  const label = user.name ? initials(user.name) : '?'
 
   return (
     <motion.div
