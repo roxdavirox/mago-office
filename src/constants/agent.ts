@@ -13,7 +13,9 @@ export const DEFAULT_AGENT_COLOR = '#6b7280'
 
 /** Retorna a cor do agente pelo ID, ou DEFAULT_AGENT_COLOR como fallback */
 export function getAgentColor(agentId: string): string {
-  return (AGENT_COLORS as Record<string, string>)[agentId] ?? DEFAULT_AGENT_COLOR
+  return agentId in AGENT_COLORS
+    ? AGENT_COLORS[agentId as keyof typeof AGENT_COLORS]
+    : DEFAULT_AGENT_COLOR
 }
 
 /**
