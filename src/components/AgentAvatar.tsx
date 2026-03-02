@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
+import type { TargetAndTransition } from 'framer-motion'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 import { SpeechBubble } from './SpeechBubble'
 
@@ -18,7 +19,7 @@ const ROLE_ICON: Record<string, string> = {
 const DEFAULT_ICON = '🤖'
 
 /** Animações Framer Motion por status */
-const STATUS_ANIMATION: Record<string, object> = {
+const STATUS_ANIMATION: Record<string, TargetAndTransition> = {
   idle: {
     y: [0, -4, 0],
     transition: { repeat: Infinity, duration: 2, ease: 'easeInOut' },
