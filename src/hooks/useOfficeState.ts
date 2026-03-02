@@ -269,11 +269,12 @@ export function useOfficeState(): OfficeState {
 
   // ── Cleanup de timers ao desmontar ───────────────────────────────────────
   useEffect(() => {
+    const timers = speechTimers.current
     return () => {
-      for (const timer of speechTimers.current.values()) {
+      for (const timer of timers.values()) {
         clearTimeout(timer)
       }
-      speechTimers.current.clear()
+      timers.clear()
     }
   }, [])
 
