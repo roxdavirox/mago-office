@@ -12,7 +12,7 @@ const mockZone: Zone = {
   width: 30,
   height: 25,
   color: '#1a1a2e',
-  agentIds: [],
+  description: 'Zona de teste',
 }
 
 describe('OfficeRoom', () => {
