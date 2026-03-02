@@ -71,3 +71,8 @@ export function connectSocket(): void {
     socket.connect()
   }
 }
+
+/** Retorna a instância singleton do socket — uso em hooks e testes. */
+export function getSocket(): TypedSocket {
+  return socket
+}

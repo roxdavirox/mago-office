@@ -175,7 +175,8 @@ const INITIAL_STATE: OfficeState = {
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
-const AGENTS_URL = 'http://localhost:3002/api/dashboard/agents'
+const BACKEND_URL = import.meta.env.VITE_MAGO_BACKEND_URL ?? 'http://localhost:3002'
+const AGENTS_URL = `${BACKEND_URL}/api/dashboard/agents`
 
 export function useOfficeState(): OfficeState {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
