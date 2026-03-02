@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { AgentAvatar } from './AgentAvatar'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
@@ -91,25 +91,26 @@ describe('AgentAvatar', () => {
     expect(document.querySelector('[aria-label*="Architect"]')).toBeTruthy()
   })
 
-  it('tooltip aparece após hover (com fake timer)', () => {
-    vi.useFakeTimers()
-    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
-    const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
-    fireEvent.mouseEnter(container)
-    expect(screen.queryByRole('tooltip')).toBeNull()
-    act(() => { vi.advanceTimersByTime(400) })
-    expect(screen.getByRole('tooltip')).toBeTruthy()
-    vi.useRealTimers()
-  })
+  describe('tooltip com fake timers', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
 
-  it('tooltip desaparece ao mouseLeave', () => {
-    vi.useFakeTimers()
-    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
-    const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
-    fireEvent.mouseEnter(container)
-    act(() => { vi.advanceTimersByTime(400) })
-    fireEvent.mouseLeave(container)
-    expect(screen.queryByRole('tooltip')).toBeNull()
-    vi.useRealTimers()
+    it('tooltip aparece após 400ms de hover', () => {
+      render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
+      const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
+      fireEvent.mouseEnter(container)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+      act(() => { vi.advanceTimersByTime(400) })
+      expect(screen.getByRole('tooltip')).toBeTruthy()
+    })
+
+    it('tooltip desaparece ao mouseLeave', () => {
+      render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
+      const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
+      fireEvent.mouseEnter(container)
+      act(() => { vi.advanceTimersByTime(400) })
+      fireEvent.mouseLeave(container)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    })
   })
 })

@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useCallback } from 'react'
+import { memo, useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TargetAndTransition } from 'framer-motion'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
@@ -77,12 +77,19 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
     setShowTooltip(false)
   }, [])
 
-  const tooltipLines = [
+  // Cleanup do timer no unmount para evitar memory leak
+  useEffect(() => {
+    return () => {
+      if (tooltipTimer.current) clearTimeout(tooltipTimer.current)
+    }
+  }, [])
+
+  const tooltipLines = useMemo(() => [
     { label: 'role', value: agent.role },
     { label: 'status', value: AGENT_STATUS_LABEL[agent.status] ?? agent.status, valueColor: badgeColor },
     ...(agent.currentTask ? [{ label: 'task', value: agent.currentTask.slice(0, 28) + (agent.currentTask.length > 28 ? '…' : '') }] : []),
     ...(agent.zoneId ? [{ label: 'zona', value: agent.zoneId }] : []),
-  ]
+  ], [agent.role, agent.status, agent.currentTask, agent.zoneId, badgeColor])
 
   return (
     <motion.div
