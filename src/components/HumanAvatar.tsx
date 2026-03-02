@@ -46,6 +46,10 @@ export const HumanAvatar = memo(function HumanAvatar({
 
   return (
     <motion.div
+      role={isMe ? 'button' : undefined}
+      aria-label={isMe ? `seu avatar: ${user.name}, arraste para mover` : `usuário ${user.name}`}
+      aria-grabbed={isMe ? false : undefined}
+      tabIndex={isMe ? 0 : undefined}
       style={{
         position: 'absolute',
         left: `${user.x}%`,

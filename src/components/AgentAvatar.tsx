@@ -1,8 +1,10 @@
-import { memo } from 'react'
-import { motion } from 'framer-motion'
+import { memo, useState, useRef, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { TargetAndTransition } from 'framer-motion'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 import { SpeechBubble } from './SpeechBubble'
+import { AvatarTooltip } from './AvatarTooltip'
+import { STATUS_LABEL } from '../constants/status'
 
 interface AgentAvatarProps {
   agent: AgentOfficeData
@@ -49,16 +51,36 @@ const STATUS_BADGE_COLOR: Record<string, string> = {
   offline:   '#374151',
 }
 
+const TOOLTIP_DELAY_MS = 400
+
 export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelected = false }: AgentAvatarProps) {
   const icon = ROLE_ICON[agent.role] ?? DEFAULT_ICON
   const animation = STATUS_ANIMATION[agent.status] ?? {}
   const badgeColor = STATUS_BADGE_COLOR[agent.status] ?? '#6b7280'
   const isOffline = agent.status === 'offline'
+  const [showTooltip, setShowTooltip] = useState(false)
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMouseEnter = useCallback(() => {
+    tooltipTimer.current = setTimeout(() => setShowTooltip(true), TOOLTIP_DELAY_MS)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current)
+    setShowTooltip(false)
+  }, [])
+
+  const tooltipLines = [
+    { label: 'role', value: agent.role },
+    { label: 'status', value: STATUS_LABEL[agent.status] ?? agent.status, valueColor: badgeColor },
+    ...(agent.currentTask ? [{ label: 'task', value: agent.currentTask.slice(0, 28) + (agent.currentTask.length > 28 ? '…' : '') }] : []),
+    ...(agent.zoneId ? [{ label: 'zona', value: agent.zoneId }] : []),
+  ]
 
   return (
     <motion.div
-      // layoutId para transição suave ao mudar de zona
       layoutId={`agent-${agent.id}`}
+      aria-label={`agente ${agent.name}, status ${STATUS_LABEL[agent.status] ?? agent.status}`}
       style={{
         position: 'absolute',
         left: `${agent.position.x}%`,
@@ -73,7 +95,14 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
       }}
       onClick={() => onClick?.(agent)}
       whileHover={onClick ? { scale: 1.1 } : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* Tooltip */}
+      <AnimatePresence>
+        {showTooltip && <AvatarTooltip lines={tooltipLines} placement="top" />}
+      </AnimatePresence>
+
       {/* Balão de fala */}
       <SpeechBubble text={agent.speechText} color={agent.color} />
 

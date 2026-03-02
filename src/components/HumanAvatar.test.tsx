@@ -13,8 +13,18 @@ vi.mock('framer-motion', async () => {
   return {
     ...actual,
     motion: {
-      div: ({ children, style, drag, onDragEnd: _ode, dragConstraints: _dc, dragElastic: _de, whileDrag: _wd, animate: _an, transition: _tr, ...rest }: React.HTMLAttributes<HTMLDivElement> & { drag?: boolean; onDragEnd?: unknown; dragConstraints?: unknown; dragElastic?: unknown; whileDrag?: unknown; animate?: unknown; transition?: unknown }) => (
-        <div style={style} {...(drag !== undefined ? { 'data-drag': String(drag) } : {})} {...rest}>{children}</div>
+      div: ({ children, style, drag, role, 'aria-label': ariaLabel, 'aria-grabbed': ariaGrabbed, tabIndex, onDragEnd: _ode, dragConstraints: _dc, dragElastic: _de, whileDrag: _wd, animate: _an, transition: _tr, ...rest }: React.HTMLAttributes<HTMLDivElement> & { drag?: boolean; onDragEnd?: unknown; dragConstraints?: unknown; dragElastic?: unknown; whileDrag?: unknown; animate?: unknown; transition?: unknown }) => (
+        <div
+          style={style}
+          role={role}
+          aria-label={ariaLabel}
+          aria-grabbed={ariaGrabbed}
+          tabIndex={tabIndex}
+          {...(drag !== undefined ? { 'data-drag': String(drag) } : {})}
+          {...rest}
+        >
+          {children}
+        </div>
       ),
     },
   }
@@ -61,5 +71,23 @@ describe('HumanAvatar', () => {
     const { container } = render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     const el = container.firstChild as HTMLElement
     expect(el.getAttribute('data-drag')).toBeNull()
+  })
+
+  it('tem role=button e aria-label quando isMe=true', () => {
+    render(<HumanAvatar user={mockUser} isMe={true} canvasRef={canvasRef} />)
+    const btn = screen.getByRole('button')
+    expect(btn).toBeTruthy()
+    expect(btn.getAttribute('aria-label')).toContain('Alice Lima')
+  })
+
+  it('não tem role=button quando isMe=false', () => {
+    render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  it('tem aria-label descrevendo o usuário quando isMe=false', () => {
+    const { container } = render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
+    const el = container.firstChild as HTMLElement
+    expect(el.getAttribute('aria-label')).toContain('Alice Lima')
   })
 })
