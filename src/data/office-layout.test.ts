@@ -93,4 +93,15 @@ describe('getAgentZone', () => {
     expect(getAgentZone('working', 'implementando feature X')).toBe('dev-zone')
     expect(getAgentZone('thinking', '')).toBe('dev-zone')
   })
+
+  it('status null/undefined → lobby (safe default)', () => {
+    expect(getAgentZone(null)).toBe('lobby')
+    expect(getAgentZone(undefined)).toBe('lobby')
+    expect(getAgentZone('')).toBe('lobby')
+  })
+
+  it('status desconhecido → dev-zone', () => {
+    expect(getAgentZone('busy')).toBe('dev-zone')
+    expect(getAgentZone('away')).toBe('dev-zone')
+  })
 })

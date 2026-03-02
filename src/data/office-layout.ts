@@ -78,11 +78,23 @@ export function getAgentColor(agentId: string): string {
   return AGENT_COLORS[agentId] ?? DEFAULT_AGENT_COLOR
 }
 
-// Mapeamento status/lastAction → zone id
-export function getAgentZone(status: string, lastAction = ''): string {
+/**
+ * Statuses suportados pelo MAGO backend:
+ *   idle      → coffee-corner
+ *   offline   → lobby
+ *   blocked   → lobby
+ *   working   → zona baseada em lastAction
+ *   thinking  → zona baseada em lastAction
+ *
+ * Outros valores (ex: undefined, null, desconhecido) → lobby (safe default)
+ */
+export function getAgentZone(status: string | null | undefined, lastAction = ''): string {
+  if (!status) return 'lobby'
+
   if (status === 'idle') return 'coffee-corner'
   if (status === 'offline' || status === 'blocked') return 'lobby'
 
+  // Para working/thinking: usar lastAction para refinar a zona
   const action = lastAction.toLowerCase()
 
   if (action.includes('review') || action.includes('aprovando') || action.includes('revisando')) {
@@ -95,5 +107,5 @@ export function getAgentZone(status: string, lastAction = ''): string {
     return 'analysis-area'
   }
 
-  return 'dev-zone' // default para working/thinking
+  return 'dev-zone'
 }
