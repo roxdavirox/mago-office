@@ -7,6 +7,7 @@ import { SpeechBubble } from './SpeechBubble'
 interface AgentAvatarProps {
   agent: AgentOfficeData
   onClick?: (agent: AgentOfficeData) => void
+  isSelected?: boolean
 }
 
 /** Ícone por role do agente */
@@ -48,7 +49,7 @@ const STATUS_BADGE_COLOR: Record<string, string> = {
   offline:   '#374151',
 }
 
-export const AgentAvatar = memo(function AgentAvatar({ agent, onClick }: AgentAvatarProps) {
+export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelected = false }: AgentAvatarProps) {
   const icon = ROLE_ICON[agent.role] ?? DEFAULT_ICON
   const animation = STATUS_ANIMATION[agent.status] ?? {}
   const badgeColor = STATUS_BADGE_COLOR[agent.status] ?? '#6b7280'
@@ -91,7 +92,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick }: AgentAv
           justifyContent: 'center',
           fontSize: 16,
           opacity: isOffline ? 0.35 : 1,
-          boxShadow: isOffline ? 'none' : `0 0 8px ${agent.color}44`,
+          boxShadow: isOffline ? 'none' : isSelected ? `0 0 0 2px ${agent.color}, 0 0 14px ${agent.color}88` : `0 0 8px ${agent.color}44`,
         }}
       >
         {icon}
