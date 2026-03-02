@@ -1,10 +1,11 @@
+import { memo } from 'react'
 import type { Zone } from '../data/office-layout'
 
 interface OfficeRoomProps {
   zone: Zone
 }
 
-export function OfficeRoom({ zone }: OfficeRoomProps) {
+export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
   return (
     <div
       data-zone-id={zone.id}
@@ -45,4 +46,4 @@ export function OfficeRoom({ zone }: OfficeRoomProps) {
       </div>
     </div>
   )
-}
+})

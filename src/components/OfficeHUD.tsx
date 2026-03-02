@@ -1,28 +1,18 @@
+import { memo } from 'react'
 import type { ConnectionStatus } from '../hooks/useSocket'
+import { STATUS_COLOR, STATUS_LABEL } from '../constants/status'
 
 interface OfficeHUDProps {
   connectionStatus: ConnectionStatus
-  agentCount: number
-  humanCount: number
+  agentCount?: number
+  humanCount?: number
 }
 
-const STATUS_COLOR: Record<ConnectionStatus, string> = {
-  connecting: '#f59e0b',
-  connected: '#00ff41',
-  reconnecting: '#f59e0b',
-  disconnected: '#6b7280',
-  error: '#ef4444',
-}
-
-const STATUS_LABEL: Record<ConnectionStatus, string> = {
-  connecting: 'conectando',
-  connected: 'online',
-  reconnecting: 'reconectando',
-  disconnected: 'offline',
-  error: 'erro',
-}
-
-export function OfficeHUD({ connectionStatus, agentCount, humanCount }: OfficeHUDProps) {
+export const OfficeHUD = memo(function OfficeHUD({
+  connectionStatus,
+  agentCount = 0,
+  humanCount = 0,
+}: OfficeHUDProps) {
   const color = STATUS_COLOR[connectionStatus]
   const label = STATUS_LABEL[connectionStatus]
 
@@ -48,6 +38,8 @@ export function OfficeHUD({ connectionStatus, agentCount, humanCount }: OfficeHU
       {/* Status conexão */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <span
+          aria-label={`status: ${label}`}
+          role="status"
           style={{
             width: 6,
             height: 6,
@@ -72,4 +64,4 @@ export function OfficeHUD({ connectionStatus, agentCount, humanCount }: OfficeHU
       )}
     </div>
   )
-}
+})
