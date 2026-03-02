@@ -4,14 +4,14 @@ import { useOfficeState } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
-import { socket } from './services/socket'
+import { getSocket } from './services/socket'
 
 export function App() {
   const { status } = useSocket()
   const { agents, users } = useOfficeState()
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  const mySocketId = socket.id ?? null
+  const mySocketId = getSocket().id ?? null
 
   return (
     <>

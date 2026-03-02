@@ -1,7 +1,7 @@
 import { memo, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { getSocket } from '../services/socket'
-import { hashColor, initials } from '../utils/avatar'
+import { hashColor, initials, toPercent } from '../utils/avatar'
 import type { UserOfficeData } from '../hooks/useOfficeState'
 
 interface HumanAvatarProps {
@@ -9,7 +9,7 @@ interface HumanAvatarProps {
   /** Indica se este é o avatar do próprio usuário (draggable) */
   isMe: boolean
   /** Ref do elemento canvas para calcular constraints de drag */
-  canvasRef: React.RefObject<HTMLElement | null>
+  canvasRef: React.RefObject<HTMLDivElement | null>
 }
 
 const EMIT_DEBOUNCE_MS = 100
@@ -31,8 +31,8 @@ export const HumanAvatar = memo(function HumanAvatar({
       if (!canvas) return
 
       const rect = canvas.getBoundingClientRect()
-      const x = Math.min(100, Math.max(0, ((info.point.x - rect.left) / rect.width) * 100))
-      const y = Math.min(100, Math.max(0, ((info.point.y - rect.top) / rect.height) * 100))
+      const x = toPercent(info.point.x - rect.left, rect.width)
+      const y = toPercent(info.point.y - rect.top, rect.height)
 
       // Debounce para evitar flood de eventos
       const now = Date.now()
