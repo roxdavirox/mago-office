@@ -65,6 +65,45 @@ export const ZONE_BY_ID = Object.fromEntries(
   OFFICE_ZONES.map(z => [z.id, z]),
 ) as Record<string, Zone>
 
+/**
+ * Offsets dentro de uma zona por índice do agente (0-based).
+ * Valores em % relativo à zona (0–100).
+ * Garante anti-sobreposição para até 3 agentes.
+ */
+const AGENT_ZONE_OFFSETS = [
+  { x: 25, y: 40 }, // agent-1
+  { x: 50, y: 40 }, // agent-2
+  { x: 75, y: 40 }, // agent-3
+]
+
+const DEFAULT_OFFSET = { x: 50, y: 50 }
+
+export interface AgentPosition {
+  /** % from left of the canvas */
+  x: number
+  /** % from top of the canvas */
+  y: number
+}
+
+/**
+ * Calcula a posição absoluta (% do canvas) de um agente dentro de sua zona,
+ * usando o índice do agente para evitar sobreposição.
+ *
+ * @param zoneId   ID da zona onde o agente está
+ * @param agentIndex  Índice 0-based do agente (0=agent-1, 1=agent-2, 2=agent-3)
+ */
+export function getAgentPosition(zoneId: string, agentIndex: number): AgentPosition {
+  const zone = ZONE_BY_ID[zoneId]
+  if (!zone) return { x: 50, y: 50 }
+
+  const offset = AGENT_ZONE_OFFSETS[agentIndex] ?? DEFAULT_OFFSET
+
+  return {
+    x: zone.x + (zone.width * offset.x) / 100,
+    y: zone.y + (zone.height * offset.y) / 100,
+  }
+}
+
 // Cores por agente
 export const AGENT_COLORS: Record<string, string> = {
   'agent-1': '#8b5cf6', // violet  — Claude
