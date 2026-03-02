@@ -1,4 +1,26 @@
+import { useSocket } from './hooks/useSocket'
+import type { ConnectionStatus } from './hooks/useSocket'
+
+const STATUS_COLOR: Record<ConnectionStatus, string> = {
+  connecting: '#f59e0b',
+  connected: '#00ff41',
+  reconnecting: '#f59e0b',
+  disconnected: '#6b7280',
+  error: '#ef4444',
+}
+
+const STATUS_LABEL: Record<ConnectionStatus, string> = {
+  connecting: 'conectando...',
+  connected: 'conectado',
+  reconnecting: 'reconectando...',
+  disconnected: 'desconectado',
+  error: 'erro de conexão',
+}
+
 export function App() {
+  const { status } = useSocket()
+  const color = STATUS_COLOR[status]
+
   return (
     <div
       style={{
@@ -15,7 +37,21 @@ export function App() {
     >
       <span style={{ fontSize: 32 }}>⌂</span>
       <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.1em' }}>MAGO OFFICE</span>
-      <span style={{ fontSize: 11, opacity: 0.5 }}>v0.1 — scaffold</span>
+      <span style={{ fontSize: 11, opacity: 0.5 }}>v0.1 — foundation</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: color,
+            boxShadow: `0 0 6px ${color}`,
+          }}
+        />
+        <span style={{ fontSize: 11, color, opacity: 0.9 }}>
+          backend {STATUS_LABEL[status]}
+        </span>
+      </div>
     </div>
   )
 }
