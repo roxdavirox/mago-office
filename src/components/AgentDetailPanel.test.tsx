@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
@@ -39,6 +39,10 @@ describe('AgentDetailPanel', () => {
 
   beforeEach(() => {
     onClose = vi.fn()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('exibe o nome do agente no header', () => {
@@ -135,8 +139,6 @@ describe('AgentDetailPanel', () => {
     // Resposta do agente aparece após fetch
     await waitFor(() => expect(screen.getByText('Tudo certo!')).toBeTruthy())
     await waitFor(() => expect(screen.getByText('Mensagem enviada!')).toBeTruthy())
-
-    vi.unstubAllGlobals()
   })
 
   it('exibe erro quando fetch falha', async () => {
@@ -149,8 +151,6 @@ describe('AgentDetailPanel', () => {
     fireEvent.click(screen.getByLabelText('enviar mensagem'))
 
     await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
-
-    vi.unstubAllGlobals()
   })
 
   it('exibe erro quando fetch retorna status não-ok', async () => {
@@ -163,8 +163,6 @@ describe('AgentDetailPanel', () => {
     fireEvent.click(screen.getByLabelText('enviar mensagem'))
 
     await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
-
-    vi.unstubAllGlobals()
   })
 
   it('click em quick message envia mensagem', async () => {
@@ -178,7 +176,5 @@ describe('AgentDetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Qual sua task atual?' }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
-
-    vi.unstubAllGlobals()
   })
 })
