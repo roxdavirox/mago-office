@@ -104,6 +104,7 @@ export function getAgentPosition(zoneId: string, agentIndex: number): AgentPosit
   }
 }
 
+// Re-exportado de constants/agent para manter compatibilidade com imports existentes
 export { AGENT_COLORS, DEFAULT_AGENT_COLOR, getAgentColor } from '../constants/agent'
 
 /**
