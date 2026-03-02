@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/mago-estimate.sh — Estimativa de issue via rx-architect (MAGO)
+# scripts/mago-estimate.sh — Estimativa de issue via OpenCode
 #
 # Uso: ./scripts/mago-estimate.sh <ISSUE_NUMBER> [--board] [--comment]
 #   --board:   Atualiza campo Size no GitHub Projects board
@@ -24,117 +24,117 @@ if [ -z "$ISSUE_NUMBER" ]; then
   exit 1
 fi
 
-CELEBRO_URL="${CELEBRO_URL:-http://localhost:3099/chat}"
+MODEL="${OPENCODE_MODEL:-opencode/minimax-m2.5-free}"
+OPENCODE="${OPENCODE_BIN:-/home/rx/.opencode/bin/opencode}"
 PROJECT_ID="PVT_kwHOAPDgbs4BQglq"
 SIZE_FIELD_ID="PVTSSF_lAHOAPDgbs4BQglqzg-nNnU"
 SIZE_IDS='{"XS":"c4ee0f78","S":"8a34ec7b","M":"fbe25f78","L":"c15fe1d4","XL":"dcefc6fd"}'
 
+if [ ! -f "$OPENCODE" ]; then
+  echo "Erro: opencode não encontrado em $OPENCODE"
+  exit 1
+fi
+
 # Buscar dados da issue
 ISSUE=$(gh issue view "$ISSUE_NUMBER" --json title,body,labels)
 TITLE=$(echo "$ISSUE" | python3 -c "import sys,json; print(json.load(sys.stdin)['title'])")
-BODY=$(echo "$ISSUE"  | python3 -c "import sys,json; print(json.load(sys.stdin)['body'] or '')" | head -c 1000)
+BODY=$(echo "$ISSUE"  | python3 -c "import sys,json; print((json.load(sys.stdin)['body'] or '')[:1500])")
 LABELS=$(echo "$ISSUE" | python3 -c "import sys,json; print(', '.join(l['name'] for l in json.load(sys.stdin)['labels']))")
 
-echo "🏗️  Consultando rx-architect para issue #$ISSUE_NUMBER..."
+echo "📐 Estimando issue #$ISSUE_NUMBER..."
 echo "   $TITLE"
 echo ""
 
-PROMPT="Você é rx-architect do MAGO. Estime esforço e planeje implementação desta issue do projeto mago-office (app React 19 + Vite 6 + TypeScript strict + Framer Motion + socket.io-client — escritório virtual 2D com avatares de agentes IA).
+PROMPT="Estime o esforço desta issue do projeto mago-office (React 19 + Vite + TypeScript + Framer Motion — escritório virtual 2D).
 
-**Issue #$ISSUE_NUMBER: $TITLE**
+Issue #$ISSUE_NUMBER: $TITLE
 Labels: $LABELS
 
 $BODY
 
-Responda EXATAMENTE neste JSON (sem texto fora do JSON):
+Responda SOMENTE em JSON válido, sem texto fora:
 {
-  \"size\": \"XS\" | \"S\" | \"M\" | \"L\" | \"XL\",
-  \"hours\": \"<estimativa ex: 1-2h>\",
-  \"steps\": [
-    {\"order\": 1, \"title\": \"<titulo>\", \"detail\": \"<detalhe tecnico>\"},
-    ...
-  ],
-  \"risks\": [\"<risco se houver>\"],
-  \"dependencies\": [\"<dep se houver>\"]
+  \"size\": \"XS|S|M|L|XL\",
+  \"minutes\": <número inteiro>,
+  \"steps\": [\"passo 1\", \"passo 2\"],
+  \"risks\": [\"risco se houver\"],
+  \"split\": [\"sub-issue se L ou XL\"]
 }
 
-Critérios de size:
-- XS: 1-2h trivial
-- S: meio dia pequeno
-- M: 1 dia medio
-- L: 2-3 dias grande
-- XL: semana+ (sugerir quebrar)"
+Critérios (issues devem caber em até 30 min):
+- XS: <10min — 1 arquivo, mudança trivial
+- S:  ~15min — 1-2 arquivos, adição pequena
+- M:  ~30min — 2-4 arquivos, feature completa pequena (máximo aceitável)
+- L:  >30min — QUEBRAR antes. Liste sub-issues em \"split\"
+- XL: nunca aceitar — sempre quebrar"
 
 TMPFILE=$(mktemp)
 printf '%s' "$PROMPT" > "$TMPFILE"
-PAYLOAD=$(python3 -c "
-import json, sys
-text = open(sys.argv[1]).read()
-print(json.dumps({'text': text, 'agent': 'rx-architect'}))
-" "$TMPFILE")
+
+RAW=$(timeout 60 "$OPENCODE" run -m "$MODEL" "$(cat "$TMPFILE")" 2>&1 \
+  | sed 's/\x1b\[[0-9;]*[A-Za-z]//g')
 rm -f "$TMPFILE"
 
-RESPONSE=$(curl -s --max-time 30 -X POST "$CELEBRO_URL" \
-  -H "Content-Type: application/json" \
-  -d "$PAYLOAD" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin).get('response',''))")
-
-# Extrair JSON da resposta
-PLAN=$(echo "$RESPONSE" | python3 -c "
+PLAN=$(echo "$RAW" | python3 -c "
 import sys, json, re
 text = sys.stdin.read()
 match = re.search(r'\{[\s\S]*\}', text)
 if match:
     try:
         print(json.dumps(json.loads(match.group(0)), indent=2, ensure_ascii=False))
-    except:
+    except Exception:
         print(text)
 else:
     print(text)
 ")
 
-SIZE=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('size','M'))" 2>/dev/null || echo "M")
-HOURS=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('hours','?'))" 2>/dev/null || echo "?")
+SIZE=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('size','S').upper())" 2>/dev/null || echo "S")
+MINS=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('minutes','?'))" 2>/dev/null || echo "?")
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📐 Estimativa rx-architect"
-echo "   Size: $SIZE ($HOURS)"
+echo "Size: $SIZE (~${MINS}min)  [máx 30min]"
 echo ""
 echo "$PLAN" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
     for s in d.get('steps', []):
-        print(f\"  {s['order']}. {s['title']}\")
-        print(f\"     {s['detail']}\")
-        print()
+        print(f'  • {s}')
     risks = d.get('risks', [])
     if risks:
-        print('  ⚠️  Riscos:', ', '.join(risks))
-    deps = d.get('dependencies', [])
-    if deps:
-        print('  🔗 Deps:', ', '.join(deps))
-except:
+        print()
+        print('  Riscos:', ', '.join(risks))
+    split = d.get('split', [])
+    if split:
+        print()
+        print('  ⚠️  L/XL — quebrar em:')
+        for s in split:
+            print(f'    - {s}')
+except Exception:
     print(sys.stdin.read())
 " 2>/dev/null || echo "$PLAN"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Atualizar campo Size no board
 if [ -n "$UPDATE_BOARD" ]; then
-  SIZE_OPTION=$(echo "$SIZE_IDS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('$SIZE', d['M']))")
-  ISSUE_NODE=$(gh api "repos/$(gh repo view --json nameWithOwner --jq '.nameWithOwner')/issues/$ISSUE_NUMBER" --jq '.node_id')
+  SIZE_OPTION=$(echo "$SIZE_IDS" | python3 -c \
+    "import sys,json; d=json.load(sys.stdin); print(d.get('$SIZE', d['S']))")
+  ISSUE_NODE=$(gh api "repos/roxdavirox/mago-office/issues/$ISSUE_NUMBER" --jq '.node_id')
   ITEM_ID=$(gh api graphql -f query='
     mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}
   ' -f p="$PROJECT_ID" -f c="$ISSUE_NODE" --jq '.data.addProjectV2ItemById.item.id')
 
   gh api graphql -f query='
     mutation($p:ID!,$i:ID!,$f:ID!,$v:String!){
-      updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$v}}){
-        projectV2Item{id}
-      }
+      updateProjectV2ItemFieldValue(input:{
+        projectId:$p itemId:$i fieldId:$f value:{singleSelectOptionId:$v}
+      }){projectV2Item{id}}
     }
   ' -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$SIZE_FIELD_ID" -f v="$SIZE_OPTION" > /dev/null
-  echo "✅ Board atualizado: Size=$SIZE para issue #$ISSUE_NUMBER"
+  # Aplicar label de size na issue também
+  SIZE_LOWER=$(echo "$SIZE" | tr '[:upper:]' '[:lower:]')
+  gh issue edit "$ISSUE_NUMBER" --add-label "size:$SIZE_LOWER" 2>/dev/null || true
+  echo "✅ Board: Size=$SIZE na issue #$ISSUE_NUMBER"
 fi
 
 # Postar plano como comentário na issue
@@ -143,37 +143,29 @@ if [ -n "$POST_COMMENT" ]; then
 import sys, json
 try:
     d = json.load(sys.stdin)
-    size = d.get('size','?')
-    hours = d.get('hours','?')
+    size  = d.get('size','?')
+    mins  = d.get('minutes','?')
     steps = d.get('steps', [])
     risks = d.get('risks', [])
-    deps = d.get('dependencies', [])
-
+    split = d.get('split', [])
     lines = [
-        '## 🏗️ Plano rx-architect',
+        '## 📐 Estimativa',
+        f'**Size:** \`{size}\` (~{mins}min)',
         '',
-        f'**Size:** \`{size}\` ({hours})',
-        '',
-        '### Passos',
+        '**Passos:**',
     ]
     for s in steps:
-        lines.append(f\"{s['order']}. **{s['title']}**\")
-        lines.append(f\"   {s['detail']}\")
+        lines.append(f'- {s}')
+    if split:
+        lines.append('')
+        lines.append('**⚠️ Issue grande — quebrar em:**')
+        for s in split:
+            lines.append(f'- {s}')
     if risks:
         lines.append('')
-        lines.append('### Riscos')
-        for r in risks:
-            lines.append(f'- ⚠️ {r}')
-    if deps:
-        lines.append('')
-        lines.append('### Dependências')
-        for dep in deps:
-            lines.append(f'- 🔗 {dep}')
-    lines.append('')
-    lines.append('---')
-    lines.append('*Estimativa automática via rx-architect (MAGO)*')
+        lines.append('**Riscos:** ' + ', '.join(risks))
     print('\n'.join(lines))
-except Exception as e:
+except Exception:
     print(sys.stdin.read())
 ")
   gh issue comment "$ISSUE_NUMBER" --body "$COMMENT"

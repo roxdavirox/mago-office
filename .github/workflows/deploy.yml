@@ -32,18 +32,4 @@ jobs:
           port: 22
           timeout: 120s
           script: |
-            set -e
-            echo "=== Deploy mago-office ==="
-            cd ~/lab/mago-office
-
-            echo "--- Git pull ---"
-            git pull origin main --ff-only
-
-            echo "--- Instalar dependências ---"
-            COREPACK_ENABLE_STRICT=0 pnpm install --frozen-lockfile
-
-            echo "--- Build ---"
-            pnpm build
-
-            echo "=== Deploy concluído ==="
-            echo "office.iae.wtf serving dist/"
+            bash ~/lab/mago-office/scripts/deploy.sh

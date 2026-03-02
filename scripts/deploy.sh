@@ -24,5 +24,10 @@ COREPACK_ENABLE_STRICT=0 pnpm install --frozen-lockfile
 echo "--- Build ---"
 COREPACK_ENABLE_STRICT=0 pnpm build
 
+if [ ! -f "dist/index.html" ]; then
+  echo "❌ Build falhou: dist/index.html não encontrado"
+  exit 1
+fi
+
 echo "=== Deploy concluído ==="
-echo "URL: http://office.iae.wtf"
+echo "URL: https://office.iae.wtf"
