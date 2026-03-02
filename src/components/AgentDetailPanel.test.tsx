@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
@@ -39,6 +39,10 @@ describe('AgentDetailPanel', () => {
 
   beforeEach(() => {
     onClose = vi.fn()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('exibe o nome do agente no header', () => {
@@ -115,5 +119,62 @@ describe('AgentDetailPanel', () => {
     fireEvent.change(input, { target: { value: 'olá agente' } })
     const btn = screen.getByLabelText('enviar mensagem') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
+  })
+
+  it('envia mensagem com fetch e exibe no histórico', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ response: 'Tudo certo!' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
+    const input = screen.getByLabelText('mensagem para o agente')
+    fireEvent.change(input, { target: { value: 'Qual a task?' } })
+    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+
+    // Mensagem do usuário aparece imediatamente
+    expect(screen.getByText('Qual a task?')).toBeTruthy()
+
+    // Resposta do agente aparece após fetch
+    await waitFor(() => expect(screen.getByText('Tudo certo!')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Mensagem enviada!')).toBeTruthy())
+  })
+
+  it('exibe erro quando fetch falha', async () => {
+    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('Network error'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
+    const input = screen.getByLabelText('mensagem para o agente')
+    fireEvent.change(input, { target: { value: 'teste' } })
+    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+
+    await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
+  })
+
+  it('exibe erro quando fetch retorna status não-ok', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, status: 500 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
+    const input = screen.getByLabelText('mensagem para o agente')
+    fireEvent.change(input, { target: { value: 'teste' } })
+    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+
+    await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
+  })
+
+  it('click em quick message envia mensagem', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ response: 'ok' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Qual sua task atual?' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
   })
 })
