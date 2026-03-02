@@ -1,18 +1,18 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { AgentAvatar } from './AgentAvatar'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
+import { ThemeProvider } from '../contexts/ThemeContext'
 
-// Framer Motion usa requestAnimationFrame — mockar para testes
+type MotionDivProps = React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>
+
 vi.mock('framer-motion', async () => {
   const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion')
   return {
     ...actual,
     motion: {
-      div: ({ children, style, onClick, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-        <div style={style} onClick={onClick} data-testid={rest['data-testid' as keyof typeof rest]}>
-          {children}
-        </div>
+      div: ({ children, animate: _a, whileHover: _wh, transition: _t, layoutId: _lid, variants: _v, initial: _i, exit: _e, layout: _l, ...rest }: MotionDivProps) => (
+        <div {...rest}>{children}</div>
       ),
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -32,54 +32,85 @@ const mockAgent: AgentOfficeData = {
   speechText: null,
 }
 
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return <ThemeProvider isHackerMode={false}>{children}</ThemeProvider>
+}
+
 describe('AgentAvatar', () => {
   it('renderiza o nome do agente', () => {
-    render(<AgentAvatar agent={mockAgent} />)
+    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
     expect(screen.getByText('Architect')).toBeTruthy()
   })
 
   it('renderiza o ícone correto para role architect', () => {
-    render(<AgentAvatar agent={mockAgent} />)
+    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
     expect(screen.getByText('🤖')).toBeTruthy()
   })
 
   it('renderiza ícone correto para role backend', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, role: 'backend' }} />)
+    render(<AgentAvatar agent={{ ...mockAgent, role: 'backend' }} />, { wrapper: Wrapper })
     expect(screen.getByText('🔬')).toBeTruthy()
   })
 
   it('renderiza ícone correto para role orchestrator', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, role: 'orchestrator' }} />)
+    render(<AgentAvatar agent={{ ...mockAgent, role: 'orchestrator' }} />, { wrapper: Wrapper })
     expect(screen.getByText('⚡')).toBeTruthy()
   })
 
   it('chama onClick ao clicar', () => {
     const onClick = vi.fn()
-    render(<AgentAvatar agent={mockAgent} onClick={onClick} />)
-    // Clicar no container do avatar
+    render(<AgentAvatar agent={mockAgent} onClick={onClick} />, { wrapper: Wrapper })
     const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
     fireEvent.click(container)
     expect(onClick).toHaveBeenCalledWith(mockAgent)
   })
 
   it('não renderiza SpeechBubble quando speechText é null', () => {
-    render(<AgentAvatar agent={mockAgent} />)
+    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
     expect(screen.queryByText(/aguardando/i)).toBeNull()
   })
 
   it('renderiza SpeechBubble quando speechText está preenchido', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, speechText: 'Analisando código' }} />)
+    render(<AgentAvatar agent={{ ...mockAgent, speechText: 'Analisando código' }} />, { wrapper: Wrapper })
     expect(screen.getByText('Analisando código')).toBeTruthy()
   })
 
   it('badge tem aria-label com o status atual', () => {
-    render(<AgentAvatar agent={mockAgent} />)
+    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
     expect(document.querySelector('[aria-label="status: idle"]')).toBeTruthy()
   })
 
   it('agente offline tem opacidade reduzida', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, status: 'offline' }} />)
+    render(<AgentAvatar agent={{ ...mockAgent, status: 'offline' }} />, { wrapper: Wrapper })
     const circle = document.querySelector('[style*="opacity: 0.35"]')
     expect(circle).toBeTruthy()
+  })
+
+  it('tem aria-label com nome e status do agente', () => {
+    render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
+    expect(document.querySelector('[aria-label*="Architect"]')).toBeTruthy()
+  })
+
+  describe('tooltip com fake timers', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
+
+    it('tooltip aparece após 400ms de hover', () => {
+      render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
+      const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
+      fireEvent.mouseEnter(container)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+      act(() => { vi.advanceTimersByTime(400) })
+      expect(screen.getByRole('tooltip')).toBeTruthy()
+    })
+
+    it('tooltip desaparece ao mouseLeave', () => {
+      render(<AgentAvatar agent={mockAgent} />, { wrapper: Wrapper })
+      const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
+      fireEvent.mouseEnter(container)
+      act(() => { vi.advanceTimersByTime(400) })
+      fireEvent.mouseLeave(container)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    })
   })
 })
