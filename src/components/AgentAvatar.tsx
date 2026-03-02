@@ -4,7 +4,14 @@ import type { TargetAndTransition } from 'framer-motion'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 import { SpeechBubble } from './SpeechBubble'
 import { AvatarTooltip } from './AvatarTooltip'
-import { STATUS_LABEL } from '../constants/status'
+
+const AGENT_STATUS_LABEL: Record<string, string> = {
+  idle:      'idle',
+  working:   'working',
+  thinking:  'thinking',
+  blocked:   'blocked',
+  offline:   'offline',
+}
 
 interface AgentAvatarProps {
   agent: AgentOfficeData
@@ -72,7 +79,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
 
   const tooltipLines = [
     { label: 'role', value: agent.role },
-    { label: 'status', value: STATUS_LABEL[agent.status] ?? agent.status, valueColor: badgeColor },
+    { label: 'status', value: AGENT_STATUS_LABEL[agent.status] ?? agent.status, valueColor: badgeColor },
     ...(agent.currentTask ? [{ label: 'task', value: agent.currentTask.slice(0, 28) + (agent.currentTask.length > 28 ? '…' : '') }] : []),
     ...(agent.zoneId ? [{ label: 'zona', value: agent.zoneId }] : []),
   ]
@@ -80,7 +87,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
   return (
     <motion.div
       layoutId={`agent-${agent.id}`}
-      aria-label={`agente ${agent.name}, status ${STATUS_LABEL[agent.status] ?? agent.status}`}
+      aria-label={`agente ${agent.name}, status ${AGENT_STATUS_LABEL[agent.status] ?? agent.status}`}
       style={{
         position: 'absolute',
         left: `${agent.position.x}%`,
