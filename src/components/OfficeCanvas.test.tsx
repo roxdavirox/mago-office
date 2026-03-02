@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { OfficeCanvas } from './OfficeCanvas'
 import { OFFICE_ZONES } from '../data/office-layout'
+import { ThemeProvider } from '../contexts/ThemeContext'
 
 describe('OfficeCanvas', () => {
   it('renderiza todas as zonas', () => {
@@ -48,5 +49,26 @@ describe('OfficeCanvas', () => {
       </OfficeCanvas>,
     )
     expect(screen.getByTestId('avatar')).toBeTruthy()
+  })
+
+  it('passa onToggleHackerMode para o HUD', () => {
+    const onToggle = vi.fn()
+    render(
+      <ThemeProvider isHackerMode={false}>
+        <OfficeCanvas connectionStatus="connected" onToggleHackerMode={onToggle} />
+      </ThemeProvider>,
+    )
+    fireEvent.click(screen.getByLabelText('ativar hacker mode'))
+    expect(onToggle).toHaveBeenCalledOnce()
+  })
+
+  it('usa bg preto no hacker mode', () => {
+    const { container } = render(
+      <ThemeProvider isHackerMode={true}>
+        <OfficeCanvas connectionStatus="connected" />
+      </ThemeProvider>,
+    )
+    const canvas = container.firstChild as HTMLElement
+    expect(canvas.style.background).toBe('rgb(0, 0, 0)')
   })
 })
