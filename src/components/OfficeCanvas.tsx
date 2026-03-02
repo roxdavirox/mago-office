@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { OfficeRoom } from './OfficeRoom'
 import { OfficeHUD } from './OfficeHUD'
@@ -9,6 +9,8 @@ interface OfficeCanvasProps {
   connectionStatus: ConnectionStatus
   agentCount?: number
   humanCount?: number
+  /** Ref para o elemento raiz — usado como dragConstraints pelo HumanAvatar */
+  canvasRef?: RefObject<HTMLDivElement | null>
 }
 
 const GRID_STYLE: React.CSSProperties = {
@@ -27,9 +29,11 @@ export function OfficeCanvas({
   connectionStatus,
   agentCount = 0,
   humanCount = 0,
+  canvasRef,
 }: OfficeCanvasProps) {
   return (
     <div
+      ref={canvasRef}
       style={{
         position: 'relative',
         width: '100%',
