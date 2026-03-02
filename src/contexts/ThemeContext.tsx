@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 export interface Theme {
   isHackerMode: boolean
@@ -49,6 +49,6 @@ export function ThemeProvider({
   isHackerMode: boolean
   children: ReactNode
 }) {
-  const theme = isHackerMode ? HACKER_THEME : DEFAULT_THEME
+  const theme = useMemo(() => (isHackerMode ? HACKER_THEME : DEFAULT_THEME), [isHackerMode])
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
 }

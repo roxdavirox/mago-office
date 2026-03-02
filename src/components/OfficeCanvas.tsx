@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react'
+import { useMemo, type ReactNode, type RefObject } from 'react'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { OfficeRoom } from './OfficeRoom'
 import { OfficeHUD } from './OfficeHUD'
@@ -25,7 +25,7 @@ export function OfficeCanvas({
 }: OfficeCanvasProps) {
   const theme = useTheme()
 
-  const gridStyle: React.CSSProperties = {
+  const gridStyle = useMemo<React.CSSProperties>(() => ({
     position: 'absolute',
     inset: 0,
     backgroundImage: theme.isHackerMode
@@ -35,7 +35,7 @@ export function OfficeCanvas({
     backgroundSize: '28px 28px',
     opacity: theme.isHackerMode ? 1 : 0.4,
     pointerEvents: 'none',
-  }
+  }), [theme.isHackerMode, theme.grid])
 
   return (
     <div
