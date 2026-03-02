@@ -2,7 +2,9 @@ import { useRef, useState, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useSocket } from './hooks/useSocket'
 import { useOfficeState } from './hooks/useOfficeState'
+import { useHackerMode } from './hooks/useHackerMode'
 import type { AgentOfficeData } from './hooks/useOfficeState'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
@@ -13,6 +15,7 @@ import { getSocket } from './services/socket'
 export function App() {
   const { status } = useSocket()
   const { agents, users } = useOfficeState()
+  const { isHackerMode, toggle: toggleHackerMode } = useHackerMode()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
@@ -29,12 +32,13 @@ export function App() {
   }, [])
 
   return (
-    <>
+    <ThemeProvider isHackerMode={isHackerMode}>
       <OfficeCanvas
         connectionStatus={status}
         agentCount={agents.filter(a => a.status !== 'offline').length}
         humanCount={users.length}
         canvasRef={canvasRef}
+        onToggleHackerMode={toggleHackerMode}
       >
         {agents.map(agent => (
           <AgentAvatar
@@ -73,13 +77,14 @@ export function App() {
           left: 16,
           fontFamily: 'JetBrains Mono, monospace',
           fontSize: 10,
-          color: '#374151',
+          color: isHackerMode ? '#00ff41' : '#374151',
           pointerEvents: 'none',
           userSelect: 'none',
+          transition: 'color 0.4s ease',
         }}
       >
-        v0.5 — interactions
+        {isHackerMode ? '> HACKER MODE ACTIVE' : 'v0.5 — interactions'}
       </div>
-    </>
+    </ThemeProvider>
   )
 }
