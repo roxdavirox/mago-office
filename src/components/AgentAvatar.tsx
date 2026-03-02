@@ -4,14 +4,7 @@ import type { TargetAndTransition } from 'framer-motion'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 import { SpeechBubble } from './SpeechBubble'
 import { AvatarTooltip } from './AvatarTooltip'
-
-const AGENT_STATUS_LABEL: Record<string, string> = {
-  idle:      'idle',
-  working:   'working',
-  thinking:  'thinking',
-  blocked:   'blocked',
-  offline:   'offline',
-}
+import { AGENT_STATUS_LABEL } from '../constants/agent'
 
 interface AgentAvatarProps {
   agent: AgentOfficeData
