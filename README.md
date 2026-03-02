@@ -1,130 +1,178 @@
 # mago-office
 
-> Virtual office visualization for MAGO agents and human collaborators — 2D workspace with real-time presence.
+> Virtual office 2D para visualização dos agentes MAGO em tempo real.
 
-A feature of the [MAGO platform](https://mago.technology) that adds a **Gather.town-style 2D virtual office** to the Flowday Web interface, showing AI agents and human collaborators interacting in real-time.
+App React standalone estilo Gather.town. Mostra os agentes de IA se movendo entre zonas conforme o status deles, com animações Framer Motion e conexão Socket.io ao backend MAGO.
 
----
-
-## Overview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  ╔═══════════════╗  ╔══════════════╗  ╔═══════════════════╗   │
-│  ║  DEV ZONE ⚡  ║  ║ REVIEW 👁    ║  ║  PLANNING 📋      ║   │
-│  ║   [agent-3]   ║  ║  [agent-1]   ║  ║                   ║   │
-│  ╚═══════════════╝  ╚══════════════╝  ╚═══════════════════╝   │
-│                                                                 │
-│  ╔═══════════════════════════╗   ╔═══════════════════╗        │
-│  ║     ANALYSIS AREA 🔍     ║   ║  COFFEE ☕         ║        │
-│  ║        [agent-2]          ║   ║                   ║        │
-│  ╚═══════════════════════════╝   ╚═══════════════════╝        │
-│                                                                 │
-│  ─────────────── LOBBY 🚪 ─── [você] ──────────────────────── │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Agentes de IA** se movem automaticamente entre zonas conforme seu `status` e `lastAction`. **Usuários humanos** aparecem como avatares draggáveis. Clicar num agente abre um painel com a task atual e um input para enviar mensagens via Celebro.
+**URL**: https://office.iae.wtf
 
 ---
 
-## Features
+## Mapa do escritório
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  DEV ZONE ⚡         REVIEW ROOM 👁      PLANNING BOARD 📋   │
+│  [implementer]       [code-reviewer]     [planner]           │
+│                                                              │
+│  ANALYSIS AREA 🔍                   COFFEE CORNER ☕         │
+│  [analyzer]                         [idle agents]           │
+│                                                              │
+│  ─────────────────── LOBBY 🚪 ──────────────────────────────│
+│  [offline/blocked agents]    [você — draggable]             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Agentes se movem automaticamente: `status` + `current_task` → zona.
+
+---
+
+## Status das features
 
 | Feature | Status | Milestone |
 |---------|--------|-----------|
-| Socket presence events | Planejado | v0.1 |
-| Office Map 2D (zones) | Planejado | v0.2 |
-| Agent Avatars animados | Planejado | v0.3 |
-| Human Presence + drag | Planejado | v0.4 |
-| Interactions + messages | Planejado | v0.5 |
+| Scaffold + ESLint + CI | Concluído | v0.1 |
+| Socket.io-client + `useSocket` | Concluído | v0.1 |
+| `office-layout.ts` (6 zonas + `getAgentZone` + `getAgentPosition`) | Concluído | v0.2 |
+| `OfficeCanvas` + `OfficeRoom` + `OfficeHUD` | Concluído | v0.2 |
+| `AgentAvatar.tsx` (animações Framer Motion) | Em desenvolvimento | v0.3 |
+| `SpeechBubble.tsx` (balão de fala) | Em desenvolvimento | v0.3 |
+| `useOfficeState.ts` (estado central REST + socket) | Em desenvolvimento | v0.3 |
+| `HumanAvatar` draggable | Planejado | v0.4 |
+| `AgentDetailPanel` + mensagens Celebro | Planejado | v0.5 |
 | Hacker Mode theme | Planejado | v1.0 |
 
 ---
 
-## Tech Stack
+## Stack
 
-- **Frontend**: React 19 + Vite 6 + Framer Motion 12
-- **Backend**: Express 4 + Socket.io 4 + Prisma 6
-- **State**: Zustand 5 + React hooks
-- **Tests**: Vitest + Playwright
-- **CI**: GitHub Actions
-
----
-
-## Milestones
-
-| Versão | Escopo | Deadline |
-|--------|--------|----------|
-| [v0.1 — Foundation](../../milestone/1) | Socket presence events, `/office/state` endpoint | 15/03/2026 |
-| [v0.2 — Office Map](../../milestone/2) | Layout 2D, zonas, rota `/app/office` | 22/03/2026 |
-| [v0.3 — Agent Avatars](../../milestone/3) | Avatares animados dos 3 agentes | 29/03/2026 |
-| [v0.4 — Human Presence](../../milestone/4) | Avatar humano draggable, broadcast | 05/04/2026 |
-| [v0.5 — Interactions](../../milestone/5) | AgentDetailPanel, mensagens | 12/04/2026 |
-| [v1.0 — Polish](../../milestone/6) | Hacker Mode, testes, CI/CD | 19/04/2026 |
+- **React 19** + **Vite 6** + **TypeScript strict**
+- **Framer Motion** — animações de avatar e transições
+- **socket.io-client** — conexão ao MAGO backend (localhost:3002)
+- **Vitest** + **@testing-library/react** — testes unitários
+- **pnpm** — gerenciador de pacotes
+- **Node 22 LTS**
 
 ---
 
-## Workflow
+## Backend MAGO (referência)
 
-```
-Issue → feat/issue-N-description branch
-    → Código + commits (conventional commits)
-    → PR aberta → base: develop
-    → GitHub Copilot Review (automático)
-    → CI: typecheck + lint + test + build
-    → Human Review (1 aprovação)
-    → Merge → develop
-    → Issue fechada (closes #N)
-```
+O mago-office **não modifica o backend** — apenas consome como cliente.
 
-### Commit Convention
+| Recurso | URL |
+|---------|-----|
+| Agentes | `GET http://localhost:3002/api/dashboard/agents` |
+| Socket.io | `ws://localhost:3002` |
 
-```
-TYPE(SCOPE): descrição
+### Shape do agente (real)
 
-Types: feat, fix, docs, refactor, test, ci, chore
-Scopes: office, backend, socket, animation, ui, dx, ci
-
-Exemplos:
-  feat(office): add AgentAvatar with Framer Motion animations
-  fix(socket): fix memory leak in office:leave handler
-  test(office): add E2E tests for human presence
+```typescript
+interface Agent {
+  id: string           // 'rx-backend', 'rx-architect', 'rx-orchestrator'
+  name: string         // 'Backend', 'Architect', 'Orchestrator'
+  role: string         // 'backend', 'architect', 'orchestrator'
+  status: string       // 'idle' | 'working' | 'thinking' | 'offline' | 'blocked'
+  current_task: string // equivalente a lastAction — ex: 'Aguardando próximo ciclo'
+  progress: number | null
+  last_heartbeat: string // ISO timestamp
+  messages_count: number
+}
 ```
 
-### Branch Naming
+### Eventos socket consumidos
 
-```
-feat/issue-N-short-description
-fix/issue-N-short-description
-```
+| Evento | Direção | Uso |
+|--------|---------|-----|
+| `agent:status:updated` | Backend → Cliente | Atualiza zona do agente |
+| `bus:message` | Backend → Cliente | Dispara SpeechBubble |
+| `office:user:joined` | Backend → Cliente | Adiciona avatar humano |
+| `office:user:left` | Backend → Cliente | Remove avatar humano |
+| `office:user:moved` | Backend → Cliente | Anima avatar humano |
+| `office:join` | Cliente → Backend | Registra presença humana |
+| `office:leave` | Cliente → Backend | Remove presença ao sair |
+| `office:user:move` | Cliente → Backend | Broadcast posição do avatar |
 
 ---
 
-## Setup Local
+## Setup
 
 ```bash
-# As mudanças de código vão no MAGO monorepo em:
-# apps/flowday-web/src/pages/office/
-# apps/flowday-backend/src/routes/office.routes.ts
-# apps/flowday-backend/src/index.ts (socket events)
+# Requisitos: Node 22, pnpm 9+
+nvm use 22
+pnpm install
+pnpm dev         # dev em localhost:3010
+```
+
+```bash
+pnpm typecheck   # tsc --noEmit
+pnpm lint        # eslint
+pnpm test        # vitest run
+pnpm build       # build prod → dist/
 ```
 
 ---
 
-## Agentes MAGO
+## Estrutura
 
-| Agente | Modelo | Role | Cor |
-|--------|--------|------|-----|
-| agent-1 | Claude Sonnet | code-reviewer | #8b5cf6 |
-| agent-2 | Gemini Flash | analyzer | #10b981 |
-| agent-3 | OpenCode | implementer | #f59e0b |
+```
+src/
+├── main.tsx
+├── App.tsx                         ← socket status + OfficeCanvas
+├── services/
+│   └── socket.ts                   ← singleton socket.io-client (autoConnect:false)
+├── data/
+│   └── office-layout.ts            ← 6 zonas, getAgentZone, getAgentPosition
+├── hooks/
+│   ├── useSocket.ts                ← status de conexão (5 estados)
+│   └── useOfficeState.ts           ← estado central (REST + socket) [wip]
+├── components/
+│   ├── OfficeCanvas.tsx            ← container full-screen + grid + HUD
+│   ├── OfficeRoom.tsx              ← zona posicionada por %
+│   ├── OfficeHUD.tsx               ← status de conexão + contagem
+│   ├── AgentAvatar.tsx             ← avatar animado por status [wip]
+│   └── SpeechBubble.tsx            ← balão de fala com auto-dismiss [wip]
+└── constants/
+    └── status.ts                   ← STATUS_COLOR, STATUS_LABEL
+```
 
 ---
 
-## Links
+## Workflow de desenvolvimento
 
-- [Flowday Board](https://mago.technology) — tasks dos agentes
-- [Discussions](../../discussions) — design decisions
-- [Wiki](../../wiki) — documentação técnica
-- [Project Board](https://github.com/users/roxdavirox/projects/2) — status geral
+```
+Issue → scripts/branch-create.sh N
+     → Código + commits (conventional commits em português)
+     → git push → PR para develop
+     → CI: typecheck + lint + test + build
+     → AI Review (self-hosted runner, OpenCode)
+     → Resolver todos os bugs/warnings do review
+     → scripts/pr-merge.sh N → squash merge
+     → Issue fechada → git checkout develop → git pull
+```
+
+### Convenção de commits
+
+```
+tipo(escopo): descrição em português lowercase
+
+feat | fix | refactor | test | chore | ci | docs
+escopo: canvas, avatar, socket, layout, hacker, deploy, scaffold
+```
+
+---
+
+## Agentes
+
+| Agente | ID real | Role | Cor |
+|--------|---------|------|-----|
+| Claude | rx-architect | architect | #8b5cf6 |
+| Gemini | rx-backend | backend | #10b981 |
+| OpenCode | rx-orchestrator | orchestrator | #f59e0b |
+
+---
+
+## Deploy
+
+Merge em `main` → GitHub Actions → SSH VPS → `pnpm build` → nginx serve `dist/`
+
+Nginx config: `/etc/nginx/sites-available/office.iae.wtf`
