@@ -71,9 +71,9 @@ export const ZONE_BY_ID = Object.fromEntries(
  * Garante anti-sobreposição para até 3 agentes.
  */
 const AGENT_ZONE_OFFSETS = [
-  { x: 25, y: 40 }, // agent-1
-  { x: 50, y: 40 }, // agent-2
-  { x: 75, y: 40 }, // agent-3
+  { x: 25, y: 40 }, // rx-architect (Claude)
+  { x: 50, y: 40 }, // rx-backend   (Gemini)
+  { x: 75, y: 40 }, // rx-orchestrator (OpenCode)
 ]
 
 const DEFAULT_OFFSET = { x: 50, y: 50 }
@@ -104,11 +104,14 @@ export function getAgentPosition(zoneId: string, agentIndex: number): AgentPosit
   }
 }
 
-// Cores por agente
+/**
+ * Cores por agente — chaves são os IDs reais da API (GET /api/dashboard/agents).
+ * A ordem define o índice de posicionamento anti-sobreposição (0, 1, 2).
+ */
 export const AGENT_COLORS: Record<string, string> = {
-  'agent-1': '#8b5cf6', // violet  — Claude
-  'agent-2': '#10b981', // emerald — Gemini
-  'agent-3': '#f59e0b', // amber   — OpenCode
+  'rx-architect':    '#8b5cf6', // violet  — Claude
+  'rx-backend':      '#10b981', // emerald — Gemini
+  'rx-orchestrator': '#f59e0b', // amber   — OpenCode
 }
 
 export const DEFAULT_AGENT_COLOR = '#6b7280'

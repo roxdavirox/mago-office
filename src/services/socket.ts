@@ -29,8 +29,9 @@ export interface BoardItemMoved {
 }
 
 export interface OfficeUser {
+  socketId: string
   userId: string
-  displayName: string
+  name: string
   x: number
   y: number
 }
@@ -42,13 +43,13 @@ export interface ServerToClientEvents {
   'bus:message': (data: BusMessage) => void
   'board:item:moved': (data: BoardItemMoved) => void
   'office:user:joined': (data: OfficeUser) => void
-  'office:user:moved': (data: OfficeUser) => void
-  'office:user:left': (data: Pick<OfficeUser, 'userId'>) => void
+  'office:user:moved': (data: { socketId: string; x: number; y: number }) => void
+  'office:user:left': (data: { socketId: string }) => void
 }
 
 export interface ClientToServerEvents {
-  'office:join': (data: Omit<OfficeUser, 'userId'> & { displayName: string }) => void
-  'office:move': (data: Pick<OfficeUser, 'x' | 'y'>) => void
+  'office:join': (data: { userId: string; name: string }) => void
+  'office:user:move': (data: { x: number; y: number }) => void
   'office:leave': () => void
 }
 
@@ -70,4 +71,9 @@ export function connectSocket(): void {
   if (!socket.connected) {
     socket.connect()
   }
+}
+
+/** Retorna a instância singleton do socket — uso em hooks e testes. */
+export function getSocket(): TypedSocket {
+  return socket
 }

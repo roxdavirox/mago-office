@@ -48,9 +48,9 @@ describe('ZONE_BY_ID', () => {
 
 describe('getAgentColor', () => {
   it('retorna cor correta para agentes conhecidos', () => {
-    expect(getAgentColor('agent-1')).toBe(AGENT_COLORS['agent-1'])
-    expect(getAgentColor('agent-2')).toBe(AGENT_COLORS['agent-2'])
-    expect(getAgentColor('agent-3')).toBe(AGENT_COLORS['agent-3'])
+    expect(getAgentColor('rx-architect')).toBe(AGENT_COLORS['rx-architect'])
+    expect(getAgentColor('rx-backend')).toBe(AGENT_COLORS['rx-backend'])
+    expect(getAgentColor('rx-orchestrator')).toBe(AGENT_COLORS['rx-orchestrator'])
   })
 
   it('retorna cor default para agente desconhecido', () => {
