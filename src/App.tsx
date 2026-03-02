@@ -4,6 +4,7 @@ import { useOfficeState } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
+import { OnlineUsersList } from './components/OnlineUsersList'
 import { getSocket } from './services/socket'
 
 export function App() {
@@ -34,6 +35,8 @@ export function App() {
         ))}
       </OfficeCanvas>
 
+      <OnlineUsersList users={users} mySocketId={mySocketId} />
+
       <div
         style={{
           position: 'fixed',
@@ -46,7 +49,7 @@ export function App() {
           userSelect: 'none',
         }}
       >
-        v0.3 — agent avatars
+        v0.4 — human presence
       </div>
     </>
   )
