@@ -39,4 +39,15 @@ git checkout -b "$BRANCH"
 
 echo ""
 echo "Branch criada: $BRANCH"
+
+# Consultar rx-architect para estimativa e plano de implementação
+CELEBRO_URL="${CELEBRO_URL:-http://localhost:3099/chat}"
+if curl -s --connect-timeout 2 "$CELEBRO_URL" > /dev/null 2>&1 || true; then
+  echo ""
+  echo "🏗️  Consultando rx-architect..."
+  bash "$(dirname "$0")/mago-estimate.sh" "$ISSUE" --board --comment 2>/dev/null \
+    || echo "⚠️  rx-architect indisponível (continuando sem estimativa)"
+fi
+
+echo ""
 echo "Próximo: git add . && git commit && ./scripts/pr-create.sh"

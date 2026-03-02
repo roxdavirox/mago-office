@@ -160,6 +160,14 @@ $REVIEW
 ---
 *Review automático via OpenCode ($MODEL)*")
 
+  # Deletar comentários anteriores de AI Review para evitar duplicatas
+  REPO=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
+  EXISTING_IDS=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+    --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | startswith("## 🤖 AI Code Review")) | .id')
+  for CID in $EXISTING_IDS; do
+    gh api -X DELETE "repos/$REPO/issues/comments/$CID" && echo "🗑️  Comentário anterior removido ($CID)"
+  done
+
   gh pr comment "$PR_NUMBER" --body "$FORMAT_REVIEW"
   echo "✅ Review postado na PR #$PR_NUMBER!"
 fi
