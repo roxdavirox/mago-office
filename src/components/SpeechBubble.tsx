@@ -53,7 +53,7 @@ export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBu
           }}
         >
           {truncated}
-          {/* Seta apontando para baixo */}
+          {/* Downward-pointing arrow */}
           <span
             data-testid="speech-arrow"
             style={{

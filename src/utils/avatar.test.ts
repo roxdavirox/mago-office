@@ -2,52 +2,52 @@ import { describe, it, expect } from 'vitest'
 import { hashColor, initials, toPercent } from './avatar'
 
 describe('hashColor', () => {
-  it('retorna uma string de cor hex', () => {
+  it('returns a hex color string', () => {
     expect(hashColor('user-1')).toMatch(/^#[0-9a-f]{6}$/)
   })
 
-  it('retorna a mesma cor para o mesmo userId', () => {
+  it('returns the same color for the same userId', () => {
     expect(hashColor('abc')).toBe(hashColor('abc'))
   })
 
-  it('retorna cores distintas para userIds diferentes', () => {
-    const colors = new Set(['user-1','user-2','user-3','user-4'].map(hashColor))
+  it('returns distinct colors for different userIds', () => {
+    const colors = new Set(['user-1', 'user-2', 'user-3', 'user-4'].map(hashColor))
     expect(colors.size).toBeGreaterThan(1)
   })
 })
 
 describe('initials', () => {
-  it('retorna 2 letras maiúsculas de nome completo', () => {
+  it('returns 2 uppercase letters for a full name', () => {
     expect(initials('João Silva')).toBe('JS')
   })
 
-  it('retorna 2 primeiras letras para nome único', () => {
+  it('returns first 2 letters for a single name', () => {
     expect(initials('Alice')).toBe('AL')
   })
 
-  it('usa primeira e última palavra para nomes compostos', () => {
+  it('uses first and last word for compound names', () => {
     expect(initials('Maria da Silva')).toBe('MS')
   })
 
-  it('lida com espaços extras', () => {
+  it('handles extra spaces', () => {
     expect(initials('  Ana  Lima  ')).toBe('AL')
   })
 })
 
 describe('toPercent', () => {
-  it('converte px para porcentagem', () => {
+  it('converts px to percentage', () => {
     expect(toPercent(250, 1000)).toBe(25)
   })
 
-  it('clampeia no mínimo 0', () => {
+  it('clamps to minimum 0', () => {
     expect(toPercent(-50, 1000)).toBe(0)
   })
 
-  it('clampeia no máximo 100', () => {
+  it('clamps to maximum 100', () => {
     expect(toPercent(1200, 1000)).toBe(100)
   })
 
-  it('retorna 50 para o centro', () => {
+  it('returns 50 for the center', () => {
     expect(toPercent(500, 1000)).toBe(50)
   })
 })

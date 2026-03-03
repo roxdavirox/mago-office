@@ -9,9 +9,9 @@ export const STATUS_COLOR: Record<ConnectionStatus, string> = {
 }
 
 export const STATUS_LABEL: Record<ConnectionStatus, string> = {
-  connecting: 'conectando',
+  connecting: 'connecting',
   connected: 'online',
-  reconnecting: 'reconectando',
+  reconnecting: 'reconnecting',
   disconnected: 'offline',
-  error: 'erro',
+  error: 'error',
 }

@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
-// jsdom não implementa scrollIntoView
+// scrollIntoView is not implemented in happy-dom
 window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
 vi.mock('framer-motion', async () => {
@@ -11,11 +11,33 @@ vi.mock('framer-motion', async () => {
   return {
     ...actual,
     motion: {
-      div: ({ children, style, variants: _v, initial: _i, animate: _a, exit: _e, transition: _t, layout: _l, ...rest }: React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
-        <div style={style} {...rest}>{children}</div>
+      div: ({
+        children,
+        style,
+        variants: _v,
+        initial: _i,
+        animate: _a,
+        exit: _e,
+        transition: _t,
+        layout: _l,
+        ...rest
+      }: React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
+        <div style={style} {...rest}>
+          {children}
+        </div>
       ),
-      aside: ({ children, style, variants: _v, initial: _i, animate: _a, exit: _e, ...rest }: React.HTMLAttributes<HTMLElement> & Record<string, unknown>) => (
-        <aside style={style} {...rest}>{children}</aside>
+      aside: ({
+        children,
+        style,
+        variants: _v,
+        initial: _i,
+        animate: _a,
+        exit: _e,
+        ...rest
+      }: React.HTMLAttributes<HTMLElement> & Record<string, unknown>) => (
+        <aside style={style} {...rest}>
+          {children}
+        </aside>
       ),
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -27,7 +49,7 @@ const mockAgent: AgentOfficeData = {
   name: 'Architect',
   role: 'architect',
   status: 'working',
-  currentTask: 'Revisando PR #44',
+  currentTask: 'Reviewing PR #44',
   zoneId: 'dev-zone',
   position: { x: 50, y: 50 },
   color: '#8b5cf6',
@@ -45,127 +67,127 @@ describe('AgentDetailPanel', () => {
     vi.unstubAllGlobals()
   })
 
-  it('exibe o nome do agente no header', () => {
+  it('shows agent name in header', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
     expect(screen.getByText('Architect')).toBeTruthy()
   })
 
-  it('exibe o role do agente', () => {
+  it('shows agent role', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
     expect(screen.getByText('architect')).toBeTruthy()
   })
 
-  it('exibe status e zona', () => {
+  it('shows status and zone', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    expect(screen.getByText('ZONA')).toBeTruthy()
+    expect(screen.getByText('ZONE')).toBeTruthy()
     expect(screen.getByText('dev-zone')).toBeTruthy()
   })
 
-  it('exibe a task atual', () => {
+  it('shows current task', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    expect(screen.getByText('Revisando PR #44')).toBeTruthy()
+    expect(screen.getByText('Reviewing PR #44')).toBeTruthy()
   })
 
-  it('não exibe seção task quando currentTask está vazio', () => {
-    const agentSemTask = { ...mockAgent, currentTask: '' }
-    render(<AgentDetailPanel agent={agentSemTask} onClose={onClose} />)
-    expect(screen.queryByText('TASK ATUAL')).toBeNull()
+  it('does not show task section when currentTask is empty', () => {
+    const agentNoTask = { ...mockAgent, currentTask: '' }
+    render(<AgentDetailPanel agent={agentNoTask} onClose={onClose} />)
+    expect(screen.queryByText('CURRENT TASK')).toBeNull()
   })
 
-  it('chama onClose ao clicar no botão fechar', () => {
+  it('calls onClose when close button is clicked', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    fireEvent.click(screen.getByLabelText('Fechar painel'))
+    fireEvent.click(screen.getByLabelText('Close panel'))
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('chama onClose ao pressionar Escape', () => {
+  it('calls onClose when Escape is pressed', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('chama onClose ao clicar no overlay', () => {
+  it('calls onClose when overlay is clicked', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
     const overlay = document.querySelector('[aria-hidden="true"]') as HTMLElement
     fireEvent.click(overlay)
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('tem role complementary e aria-label', () => {
+  it('has complementary role and aria-label', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    expect(screen.getByRole('complementary', { name: /detalhes do agente Architect/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: /Agent details: Architect/i })).toBeTruthy()
   })
 
-  it('exibe mensagens rápidas predefinidas', () => {
+  it('shows predefined quick messages', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    expect(screen.getByText('Qual sua task atual?')).toBeTruthy()
-    expect(screen.getByText('Pause e aguarde')).toBeTruthy()
+    expect(screen.getByText('What is your current task?')).toBeTruthy()
+    expect(screen.getByText('Pause and wait')).toBeTruthy()
   })
 
-  it('input de mensagem está presente', () => {
+  it('message input is present', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    expect(screen.getByLabelText('mensagem para o agente')).toBeTruthy()
+    expect(screen.getByLabelText('message to agent')).toBeTruthy()
   })
 
-  it('botão send está desabilitado com input vazio', () => {
+  it('send button is disabled with empty input', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    const btn = screen.getByLabelText('enviar mensagem') as HTMLButtonElement
+    const btn = screen.getByLabelText('send message') as HTMLButtonElement
     expect(btn.disabled).toBe(true)
   })
 
-  it('botão send habilita ao digitar mensagem', () => {
+  it('send button enables when message is typed', () => {
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    const input = screen.getByLabelText('mensagem para o agente')
-    fireEvent.change(input, { target: { value: 'olá agente' } })
-    const btn = screen.getByLabelText('enviar mensagem') as HTMLButtonElement
+    const input = screen.getByLabelText('message to agent')
+    fireEvent.change(input, { target: { value: 'hello agent' } })
+    const btn = screen.getByLabelText('send message') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
   })
 
-  it('envia mensagem com fetch e exibe no histórico', async () => {
+  it('sends message with fetch and shows it in history', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ response: 'Tudo certo!' }),
+      json: async () => ({ response: 'All good!' }),
     })
     vi.stubGlobal('fetch', fetchMock)
 
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    const input = screen.getByLabelText('mensagem para o agente')
-    fireEvent.change(input, { target: { value: 'Qual a task?' } })
-    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+    const input = screen.getByLabelText('message to agent')
+    fireEvent.change(input, { target: { value: 'What is the task?' } })
+    fireEvent.click(screen.getByLabelText('send message'))
 
-    // Mensagem do usuário aparece imediatamente
-    expect(screen.getByText('Qual a task?')).toBeTruthy()
+    // User message appears immediately
+    expect(screen.getByText('What is the task?')).toBeTruthy()
 
-    // Resposta do agente aparece após fetch
-    await waitFor(() => expect(screen.getByText('Tudo certo!')).toBeTruthy())
-    await waitFor(() => expect(screen.getByText('Mensagem enviada!')).toBeTruthy())
+    // Agent response appears after fetch
+    await waitFor(() => expect(screen.getByText('All good!')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Message sent!')).toBeTruthy())
   })
 
-  it('exibe erro quando fetch falha', async () => {
+  it('shows error when fetch fails', async () => {
     const fetchMock = vi.fn().mockRejectedValueOnce(new Error('Network error'))
     vi.stubGlobal('fetch', fetchMock)
 
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    const input = screen.getByLabelText('mensagem para o agente')
-    fireEvent.change(input, { target: { value: 'teste' } })
-    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+    const input = screen.getByLabelText('message to agent')
+    fireEvent.change(input, { target: { value: 'test' } })
+    fireEvent.click(screen.getByLabelText('send message'))
 
-    await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Failed to send. Please try again.')).toBeTruthy())
   })
 
-  it('exibe erro quando fetch retorna status não-ok', async () => {
+  it('shows error when fetch returns non-ok status', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, status: 500 })
     vi.stubGlobal('fetch', fetchMock)
 
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    const input = screen.getByLabelText('mensagem para o agente')
-    fireEvent.change(input, { target: { value: 'teste' } })
-    fireEvent.click(screen.getByLabelText('enviar mensagem'))
+    const input = screen.getByLabelText('message to agent')
+    fireEvent.change(input, { target: { value: 'test' } })
+    fireEvent.click(screen.getByLabelText('send message'))
 
-    await waitFor(() => expect(screen.getByText('Erro ao enviar. Tente novamente.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Failed to send. Please try again.')).toBeTruthy())
   })
 
-  it('click em quick message envia mensagem', async () => {
+  it('clicking a quick message sends it', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ response: 'ok' }),
@@ -173,7 +195,7 @@ describe('AgentDetailPanel', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Qual sua task atual?' }))
+    fireEvent.click(screen.getByRole('button', { name: 'What is your current task?' }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
   })

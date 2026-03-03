@@ -4,44 +4,44 @@ import { OfficeCanvas } from './OfficeCanvas'
 import { OFFICE_ZONES } from '../data/office-layout'
 
 describe('OfficeCanvas', () => {
-  it('renderiza todas as zonas', () => {
+  it('renders all zones', () => {
     render(<OfficeCanvas connectionStatus="connected" />)
     for (const zone of OFFICE_ZONES) {
       expect(document.querySelector(`[data-zone-id="${zone.id}"]`)).toBeTruthy()
     }
   })
 
-  it('renderiza o HUD com status connected', () => {
+  it('renders HUD with connected status', () => {
     render(<OfficeCanvas connectionStatus="connected" />)
     expect(screen.getByText('online')).toBeTruthy()
   })
 
-  it('renderiza o HUD com status error', () => {
+  it('renders HUD with error status', () => {
     render(<OfficeCanvas connectionStatus="error" />)
-    expect(screen.getByText('erro')).toBeTruthy()
+    expect(screen.getByText('error')).toBeTruthy()
   })
 
-  it('exibe contagem de agentes', () => {
+  it('shows agent count', () => {
     render(<OfficeCanvas connectionStatus="connected" agentCount={3} />)
     expect(screen.getByText('3 agents')).toBeTruthy()
   })
 
-  it('exibe "agent" no singular', () => {
+  it('shows "agent" in singular', () => {
     render(<OfficeCanvas connectionStatus="connected" agentCount={1} />)
     expect(screen.getByText('1 agent')).toBeTruthy()
   })
 
-  it('não exibe humans quando humanCount é 0', () => {
+  it('does not show humans when humanCount is 0', () => {
     render(<OfficeCanvas connectionStatus="connected" humanCount={0} />)
     expect(screen.queryByText(/human/)).toBeNull()
   })
 
-  it('exibe humans quando humanCount > 0', () => {
+  it('shows humans when humanCount > 0', () => {
     render(<OfficeCanvas connectionStatus="connected" humanCount={2} />)
     expect(screen.getByText('2 humans')).toBeTruthy()
   })
 
-  it('renderiza children dentro do canvas', () => {
+  it('renders children inside the canvas', () => {
     render(
       <OfficeCanvas connectionStatus="connected">
         <div data-testid="avatar">Agent Avatar</div>
@@ -50,7 +50,7 @@ describe('OfficeCanvas', () => {
     expect(screen.getByTestId('avatar')).toBeTruthy()
   })
 
-  it('usa cor de fundo estática definida em COLORS', () => {
+  it('uses static background color defined in COLORS', () => {
     const { container } = render(<OfficeCanvas connectionStatus="connected" />)
     const canvas = container.firstChild as HTMLElement
     expect(canvas.style.background).toBeTruthy()

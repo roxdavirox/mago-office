@@ -36,7 +36,7 @@ export const OfficeHUD = memo(function OfficeHUD({
         color: COLORS.label,
       }}
     >
-      {/* Status conexão */}
+      {/* Connection status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <span
           aria-label={`status: ${label}`}
@@ -54,7 +54,7 @@ export const OfficeHUD = memo(function OfficeHUD({
 
       <span style={{ color: COLORS.separator }}>│</span>
 
-      {/* Agentes online */}
+      {/* Online agents */}
       <span>
         {agentCount} agent{agentCount !== 1 ? 's' : ''}
       </span>

@@ -1,16 +1,15 @@
 import { useEffect, useReducer, useCallback, useRef } from 'react'
 import { getSocket } from '../services/socket'
-import type { AgentStatus as SocketAgentStatus, BusMessage as SocketBusMessage, OfficeUser } from '../services/socket'
-import {
-  getAgentZone,
-  getAgentPosition,
-  getAgentColor,
-  AGENT_COLORS,
-} from '../data/office-layout'
+import type {
+  AgentStatus as SocketAgentStatus,
+  BusMessage as SocketBusMessage,
+  OfficeUser,
+} from '../services/socket'
+import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../data/office-layout'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-/** Shape real da API GET /api/dashboard/agents */
+/** Real shape of the GET /api/dashboard/agents API */
 export interface RawAgent {
   id: string
   name: string
@@ -22,19 +21,19 @@ export interface RawAgent {
   messages_count: number
 }
 
-/** Agente enriquecido com dados de posição calculados */
+/** Agent enriched with calculated position data */
 export interface AgentOfficeData {
   id: string
   name: string
   role: string
   status: string
-  /** current_task da API — equivalente a lastAction */
+  /** current_task from the API — equivalent to lastAction */
   currentTask: string
   zoneId: string
-  /** Posição absoluta em % do canvas */
+  /** Absolute position as % of the canvas */
   position: { x: number; y: number }
   color: string
-  /** Texto do SpeechBubble atual (nulo = oculto) */
+  /** Current SpeechBubble text (null = hidden) */
   speechText: string | null
 }
 
@@ -58,8 +57,8 @@ export interface OfficeState {
 const AGENT_IDS_ORDERED = Object.keys(AGENT_COLORS) // ['rx-architect', 'rx-backend', 'rx-orchestrator']
 
 /**
- * Determina o índice estável do agente para cálculo de offset anti-sobreposição.
- * Usa a posição do id na lista ordenada; ids desconhecidos vão para o final.
+ * Determines the stable agent index for anti-overlap offset calculation.
+ * Uses the id position in the ordered list; unknown ids go to the end.
  */
 function agentIndex(id: string): number {
   const idx = AGENT_IDS_ORDERED.indexOf(id)
@@ -107,7 +106,7 @@ function reducer(state: OfficeState, action: Action): OfficeState {
     case 'AGENT_STATUS_UPDATED':
       return {
         ...state,
-        agents: state.agents.map(a => {
+        agents: state.agents.map((a) => {
           if (a.id !== action.agentId) return a
           const raw: RawAgent = {
             id: a.id,
@@ -126,36 +125,34 @@ function reducer(state: OfficeState, action: Action): OfficeState {
     case 'AGENT_SPEECH':
       return {
         ...state,
-        agents: state.agents.map(a =>
-          a.id === action.agentId ? { ...a, speechText: action.text } : a,
+        agents: state.agents.map((a) =>
+          a.id === action.agentId ? { ...a, speechText: action.text } : a
         ),
       }
 
     case 'AGENT_SPEECH_CLEAR':
       return {
         ...state,
-        agents: state.agents.map(a =>
-          a.id === action.agentId ? { ...a, speechText: null } : a,
-        ),
+        agents: state.agents.map((a) => (a.id === action.agentId ? { ...a, speechText: null } : a)),
       }
 
     case 'USER_JOINED':
       return {
         ...state,
-        users: [...state.users.filter(u => u.socketId !== action.user.socketId), action.user],
+        users: [...state.users.filter((u) => u.socketId !== action.user.socketId), action.user],
       }
 
     case 'USER_LEFT':
       return {
         ...state,
-        users: state.users.filter(u => u.socketId !== action.socketId),
+        users: state.users.filter((u) => u.socketId !== action.socketId),
       }
 
     case 'USER_MOVED':
       return {
         ...state,
-        users: state.users.map(u =>
-          u.socketId === action.socketId ? { ...u, x: action.x, y: action.y } : u,
+        users: state.users.map((u) =>
+          u.socketId === action.socketId ? { ...u, x: action.x, y: action.y } : u
         ),
       }
 
@@ -182,7 +179,7 @@ const AGENTS_URL = `${BACKEND_URL}/api/dashboard/agents`
 export function useOfficeState(): OfficeState {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  // Manter refs de timers de speech bubble por agente para cleanup
+  // Keep refs of speech bubble timers per agent for cleanup
   const speechTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   const scheduleSpeechClear = useCallback((agentId: string) => {
@@ -195,16 +192,16 @@ export function useOfficeState(): OfficeState {
     speechTimers.current.set(agentId, timer)
   }, [])
 
-  // ── Carga inicial via REST ───────────────────────────────────────────────
+  // ── Initial load via REST ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
 
     fetch(AGENTS_URL)
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json() as Promise<RawAgent[]>
       })
-      .then(agents => {
+      .then((agents) => {
         if (!cancelled) dispatch({ type: 'AGENTS_LOADED', agents })
       })
       .catch((err: unknown) => {
@@ -219,7 +216,7 @@ export function useOfficeState(): OfficeState {
     }
   }, [])
 
-  // ── Socket events ────────────────────────────────────────────────────────
+  // ── Socket events ───────────────────────────────────────────────────────
   useEffect(() => {
     const socket = getSocket()
 
@@ -266,7 +263,7 @@ export function useOfficeState(): OfficeState {
     }
   }, [scheduleSpeechClear])
 
-  // ── Cleanup de timers ao desmontar ───────────────────────────────────────
+  // ── Timer cleanup on unmount ─────────────────────────────────────────────
   useEffect(() => {
     const timers = speechTimers.current
     return () => {

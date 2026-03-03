@@ -12,16 +12,16 @@ interface AgentAvatarProps {
   isSelected?: boolean
 }
 
-/** Ícone por role do agente */
+/** Icon per agent role */
 const ROLE_ICON: Record<string, string> = {
-  architect:    '🤖',
-  backend:      '🔬',
+  architect: '🤖',
+  backend: '🔬',
   orchestrator: '⚡',
 }
 
 const DEFAULT_ICON = '🤖'
 
-/** Animações Framer Motion por status */
+/** Framer Motion animations per status */
 const STATUS_ANIMATION: Record<string, TargetAndTransition> = {
   idle: {
     y: [0, -4, 0],
@@ -42,18 +42,22 @@ const STATUS_ANIMATION: Record<string, TargetAndTransition> = {
   offline: {},
 }
 
-/** Cor do badge de status */
+/** Status badge color */
 const STATUS_BADGE_COLOR: Record<string, string> = {
-  idle:      '#6b7280',
-  working:   '#00ff41',
-  thinking:  '#f59e0b',
-  blocked:   '#ef4444',
-  offline:   '#374151',
+  idle: '#6b7280',
+  working: '#00ff41',
+  thinking: '#f59e0b',
+  blocked: '#ef4444',
+  offline: '#374151',
 }
 
 const TOOLTIP_DELAY_MS = 400
 
-export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelected = false }: AgentAvatarProps) {
+export const AgentAvatar = memo(function AgentAvatar({
+  agent,
+  onClick,
+  isSelected = false,
+}: AgentAvatarProps) {
   const icon = ROLE_ICON[agent.role] ?? DEFAULT_ICON
   const animation = STATUS_ANIMATION[agent.status] ?? {}
   const badgeColor = STATUS_BADGE_COLOR[agent.status] ?? '#6b7280'
@@ -70,24 +74,38 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
     setShowTooltip(false)
   }, [])
 
-  // Cleanup do timer no unmount para evitar memory leak
+  // Cleanup timer on unmount to avoid memory leak
   useEffect(() => {
     return () => {
       if (tooltipTimer.current) clearTimeout(tooltipTimer.current)
     }
   }, [])
 
-  const tooltipLines = useMemo(() => [
-    { label: 'role', value: agent.role },
-    { label: 'status', value: AGENT_STATUS_LABEL[agent.status] ?? agent.status, valueColor: badgeColor },
-    ...(agent.currentTask ? [{ label: 'task', value: agent.currentTask.slice(0, 28) + (agent.currentTask.length > 28 ? '…' : '') }] : []),
-    ...(agent.zoneId ? [{ label: 'zona', value: agent.zoneId }] : []),
-  ], [agent.role, agent.status, agent.currentTask, agent.zoneId, badgeColor])
+  const tooltipLines = useMemo(
+    () => [
+      { label: 'role', value: agent.role },
+      {
+        label: 'status',
+        value: AGENT_STATUS_LABEL[agent.status] ?? agent.status,
+        valueColor: badgeColor,
+      },
+      ...(agent.currentTask
+        ? [
+            {
+              label: 'task',
+              value: agent.currentTask.slice(0, 28) + (agent.currentTask.length > 28 ? '…' : ''),
+            },
+          ]
+        : []),
+      ...(agent.zoneId ? [{ label: 'zone', value: agent.zoneId }] : []),
+    ],
+    [agent.role, agent.status, agent.currentTask, agent.zoneId, badgeColor]
+  )
 
   return (
     <motion.div
       layoutId={`agent-${agent.id}`}
-      aria-label={`agente ${agent.name}, status ${AGENT_STATUS_LABEL[agent.status] ?? agent.status}`}
+      aria-label={`agent ${agent.name}, status ${AGENT_STATUS_LABEL[agent.status] ?? agent.status}`}
       style={{
         position: 'absolute',
         left: `${agent.position.x}%`,
@@ -110,10 +128,10 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
         {showTooltip && <AvatarTooltip lines={tooltipLines} placement="top" />}
       </AnimatePresence>
 
-      {/* Balão de fala */}
+      {/* Speech bubble */}
       <SpeechBubble text={agent.speechText} color={agent.color} />
 
-      {/* Avatar circular */}
+      {/* Circular avatar */}
       <motion.div
         animate={animation}
         style={{
@@ -128,13 +146,17 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
           justifyContent: 'center',
           fontSize: 16,
           opacity: isOffline ? 0.35 : 1,
-          boxShadow: isOffline ? 'none' : isSelected ? `0 0 0 2px ${agent.color}, 0 0 14px ${agent.color}88` : `0 0 8px ${agent.color}44`,
+          boxShadow: isOffline
+            ? 'none'
+            : isSelected
+              ? `0 0 0 2px ${agent.color}, 0 0 14px ${agent.color}88`
+              : `0 0 8px ${agent.color}44`,
           transition: 'box-shadow 0.2s ease',
         }}
       >
         {icon}
 
-        {/* Badge de status */}
+        {/* Status badge */}
         <span
           aria-label={`status: ${agent.status}`}
           style={{
@@ -151,7 +173,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent, onClick, isSelecte
         />
       </motion.div>
 
-      {/* Nome do agente */}
+      {/* Agent name */}
       <span
         style={{
           fontFamily: 'JetBrains Mono, monospace',
