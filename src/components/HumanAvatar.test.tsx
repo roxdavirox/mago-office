@@ -1,12 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
 import { createRef } from 'react'
 import { HumanAvatar } from './HumanAvatar'
 import type { UserOfficeData } from '../hooks/useOfficeState'
 
+const mockEmit = vi.fn()
+
 vi.mock('../services/socket', () => ({
-  getSocket: () => ({ emit: vi.fn() }),
+  getSocket: () => ({ emit: mockEmit }),
 }))
+
+// Captures the last onDragEnd handler so tests can invoke it directly
+let capturedOnDragEnd: ((_e: unknown, info: unknown) => void) | undefined
 
 vi.mock('framer-motion', async () => {
   const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion')
@@ -21,7 +26,7 @@ vi.mock('framer-motion', async () => {
         'aria-label': ariaLabel,
         'aria-grabbed': ariaGrabbed,
         tabIndex,
-        onDragEnd: _ode,
+        onDragEnd,
         dragConstraints: _dc,
         dragElastic: _de,
         whileDrag: _wd,
@@ -30,25 +35,30 @@ vi.mock('framer-motion', async () => {
         ...rest
       }: React.HTMLAttributes<HTMLDivElement> & {
         drag?: boolean
-        onDragEnd?: unknown
+        onDragEnd?: (_e: unknown, info: unknown) => void
         dragConstraints?: unknown
         dragElastic?: unknown
         whileDrag?: unknown
         animate?: unknown
         transition?: unknown
-      }) => (
-        <div
-          style={style}
-          role={role}
-          aria-label={ariaLabel}
-          aria-grabbed={ariaGrabbed}
-          tabIndex={tabIndex}
-          {...(drag !== undefined ? { 'data-drag': String(drag) } : {})}
-          {...rest}
-        >
-          {children}
-        </div>
-      ),
+      }) => {
+        if (typeof onDragEnd === 'function') {
+          capturedOnDragEnd = onDragEnd
+        }
+        return (
+          <div
+            style={style}
+            role={role}
+            aria-label={ariaLabel}
+            aria-grabbed={ariaGrabbed}
+            tabIndex={tabIndex}
+            {...(drag !== undefined ? { 'data-drag': String(drag) } : {})}
+            {...rest}
+          >
+            {children}
+          </div>
+        )
+      },
     },
   }
 })
@@ -62,6 +72,23 @@ const mockUser: UserOfficeData = {
 }
 
 const canvasRef = createRef<HTMLDivElement>()
+
+/** Build a canvas ref with a specific getBoundingClientRect */
+function makeCanvasRef(rect: { left: number; top: number; width: number; height: number }) {
+  const div = document.createElement('div')
+  div.getBoundingClientRect = () => ({
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    right: rect.left + rect.width,
+    bottom: rect.top + rect.height,
+    x: rect.left,
+    y: rect.top,
+    toJSON: () => {},
+  })
+  return { current: div } as React.RefObject<HTMLDivElement>
+}
 
 describe('HumanAvatar', () => {
   it('shows user initials', () => {
@@ -112,5 +139,79 @@ describe('HumanAvatar', () => {
     const { container } = render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     const el = container.firstChild as HTMLElement
     expect(el.getAttribute('aria-label')).toContain('Alice Lima')
+  })
+
+  describe('handleDragEnd', () => {
+    afterEach(() => {
+      mockEmit.mockClear()
+      capturedOnDragEnd = undefined
+      vi.useRealTimers()
+    })
+
+    it('emits office:user:move with % coords when isMe=true', () => {
+      const ref = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 500 })
+      render(<HumanAvatar user={mockUser} isMe={true} canvasRef={ref} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 500, y: 250 } })
+      })
+
+      expect(mockEmit).toHaveBeenCalledWith('office:user:move', { x: 50, y: 50 })
+    })
+
+    it('does not emit when isMe=false', () => {
+      const ref = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 500 })
+      render(<HumanAvatar user={mockUser} isMe={false} canvasRef={ref} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 500, y: 250 } })
+      })
+
+      expect(mockEmit).not.toHaveBeenCalled()
+    })
+
+    it('does not emit when canvasRef.current is null', () => {
+      const ref = { current: null } as unknown as React.RefObject<HTMLDivElement>
+      render(<HumanAvatar user={mockUser} isMe={true} canvasRef={ref} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 500, y: 250 } })
+      })
+
+      expect(mockEmit).not.toHaveBeenCalled()
+    })
+
+    it('debounces — does not emit a second event within 100ms', () => {
+      vi.useFakeTimers()
+      const ref = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 500 })
+      render(<HumanAvatar user={mockUser} isMe={true} canvasRef={ref} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 500, y: 250 } })
+      })
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 600, y: 300 } })
+      })
+
+      expect(mockEmit).toHaveBeenCalledTimes(1)
+    })
+
+    it('emits again after debounce window elapses', () => {
+      vi.useFakeTimers()
+      const ref = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 500 })
+      render(<HumanAvatar user={mockUser} isMe={true} canvasRef={ref} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 500, y: 250 } })
+      })
+      act(() => {
+        vi.advanceTimersByTime(101)
+      })
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 600, y: 300 } })
+      })
+
+      expect(mockEmit).toHaveBeenCalledTimes(2)
+    })
   })
 })
