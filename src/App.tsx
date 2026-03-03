@@ -5,6 +5,7 @@ import { useOfficeState } from './hooks/useOfficeState'
 import type { AgentOfficeData } from './hooks/useOfficeState'
 import type { ZoneOverride } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
+import { OfficeOverlay } from './components/OfficeOverlay'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
 import { OnlineUsersList } from './components/OnlineUsersList'
@@ -13,7 +14,8 @@ import { getSocket } from './services/socket'
 
 export function App() {
   const { status } = useSocket()
-  const { agents, users, setZoneOverride, clearZoneOverride } = useOfficeState()
+  const { agents, users, isLoading, error, setZoneOverride, clearZoneOverride, retry } =
+    useOfficeState()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
@@ -70,6 +72,9 @@ export function App() {
             canvasRef={canvasRef}
           />
         ))}
+
+        {/* Loading / error overlay — sits inside the canvas */}
+        <OfficeOverlay isLoading={isLoading} error={error} onRetry={retry} />
       </OfficeCanvas>
 
       <OnlineUsersList users={users} mySocketId={mySocketId} />
