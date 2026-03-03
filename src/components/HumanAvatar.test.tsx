@@ -13,7 +13,30 @@ vi.mock('framer-motion', async () => {
   return {
     ...actual,
     motion: {
-      div: ({ children, style, drag, role, 'aria-label': ariaLabel, 'aria-grabbed': ariaGrabbed, tabIndex, onDragEnd: _ode, dragConstraints: _dc, dragElastic: _de, whileDrag: _wd, animate: _an, transition: _tr, ...rest }: React.HTMLAttributes<HTMLDivElement> & { drag?: boolean; onDragEnd?: unknown; dragConstraints?: unknown; dragElastic?: unknown; whileDrag?: unknown; animate?: unknown; transition?: unknown }) => (
+      div: ({
+        children,
+        style,
+        drag,
+        role,
+        'aria-label': ariaLabel,
+        'aria-grabbed': ariaGrabbed,
+        tabIndex,
+        onDragEnd: _ode,
+        dragConstraints: _dc,
+        dragElastic: _de,
+        whileDrag: _wd,
+        animate: _an,
+        transition: _tr,
+        ...rest
+      }: React.HTMLAttributes<HTMLDivElement> & {
+        drag?: boolean
+        onDragEnd?: unknown
+        dragConstraints?: unknown
+        dragElastic?: unknown
+        whileDrag?: unknown
+        animate?: unknown
+        transition?: unknown
+      }) => (
         <div
           style={style}
           role={role}
@@ -41,51 +64,51 @@ const mockUser: UserOfficeData = {
 const canvasRef = createRef<HTMLDivElement>()
 
 describe('HumanAvatar', () => {
-  it('exibe as iniciais do usuário', () => {
+  it('shows user initials', () => {
     render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     expect(screen.getByText('AL')).toBeTruthy()
   })
 
-  it('exibe o nome do usuário', () => {
+  it('shows user name', () => {
     render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     expect(screen.getByText('Alice Lima')).toBeTruthy()
   })
 
-  it('exibe badge YOU quando isMe=true', () => {
+  it('shows YOU badge when isMe=true', () => {
     render(<HumanAvatar user={mockUser} isMe={true} canvasRef={canvasRef} />)
     expect(screen.getByText('you')).toBeTruthy()
   })
 
-  it('não exibe badge YOU quando isMe=false', () => {
+  it('does not show YOU badge when isMe=false', () => {
     render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     expect(screen.queryByText('you')).toBeNull()
   })
 
-  it('tem drag ativo apenas quando isMe=true', () => {
+  it('has drag active only when isMe=true', () => {
     const { container } = render(<HumanAvatar user={mockUser} isMe={true} canvasRef={canvasRef} />)
     const el = container.firstChild as HTMLElement
     expect(el.getAttribute('data-drag')).toBe('true')
   })
 
-  it('não tem drag quando isMe=false', () => {
+  it('has no drag when isMe=false', () => {
     const { container } = render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     const el = container.firstChild as HTMLElement
     expect(el.getAttribute('data-drag')).toBeNull()
   })
 
-  it('tem role=button e aria-label quando isMe=true', () => {
+  it('has role=button and aria-label when isMe=true', () => {
     render(<HumanAvatar user={mockUser} isMe={true} canvasRef={canvasRef} />)
     const btn = screen.getByRole('button')
     expect(btn).toBeTruthy()
     expect(btn.getAttribute('aria-label')).toContain('Alice Lima')
   })
 
-  it('não tem role=button quando isMe=false', () => {
+  it('has no role=button when isMe=false', () => {
     render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it('tem aria-label descrevendo o usuário quando isMe=false', () => {
+  it('has aria-label describing the user when isMe=false', () => {
     const { container } = render(<HumanAvatar user={mockUser} isMe={false} canvasRef={canvasRef} />)
     const el = container.firstChild as HTMLElement
     expect(el.getAttribute('aria-label')).toContain('Alice Lima')

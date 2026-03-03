@@ -1,4 +1,4 @@
-/** Paleta de cores estática do mago-office */
+/** Static color palette for mago-office */
 export const COLORS = {
   bg: '#0d1117',
   grid: '#1f2937',

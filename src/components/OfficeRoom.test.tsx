@@ -12,26 +12,26 @@ const mockZone: Zone = {
   width: 30,
   height: 25,
   color: '#1a1a2e',
-  description: 'Zona de teste',
+  description: 'Test zone',
 }
 
 describe('OfficeRoom', () => {
-  it('renderiza com data-zone-id correto', () => {
+  it('renders with correct data-zone-id', () => {
     render(<OfficeRoom zone={mockZone} />)
     expect(document.querySelector('[data-zone-id="test-zone"]')).toBeTruthy()
   })
 
-  it('exibe o ícone da zona', () => {
+  it('shows zone icon', () => {
     render(<OfficeRoom zone={mockZone} />)
     expect(screen.getByText('🧪')).toBeTruthy()
   })
 
-  it('exibe o label da zona', () => {
+  it('shows zone label', () => {
     render(<OfficeRoom zone={mockZone} />)
     expect(screen.getByText('Test Zone')).toBeTruthy()
   })
 
-  it('posiciona a zona com as coordenadas corretas', () => {
+  it('positions zone with correct coordinates', () => {
     render(<OfficeRoom zone={mockZone} />)
     const el = document.querySelector('[data-zone-id="test-zone"]') as HTMLElement
     expect(el.style.left).toBe('10%')
@@ -40,7 +40,7 @@ describe('OfficeRoom', () => {
     expect(el.style.height).toBe('25%')
   })
 
-  it('aplica a cor de fundo da zona (zone.color)', () => {
+  it('applies zone background color (zone.color)', () => {
     render(<OfficeRoom zone={mockZone} />)
     const el = document.querySelector('[data-zone-id="test-zone"]') as HTMLElement
     expect(el.style.background).toBeTruthy()

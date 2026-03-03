@@ -27,7 +27,7 @@ const mockAgents: RawAgent[] = [
     name: 'Architect',
     role: 'architect',
     status: 'idle',
-    current_task: 'Aguardando próximo ciclo',
+    current_task: 'Waiting for next cycle',
     progress: null,
     last_heartbeat: '2026-03-01T00:00:00Z',
     messages_count: 0,
@@ -37,7 +37,7 @@ const mockAgents: RawAgent[] = [
     name: 'Backend',
     role: 'backend',
     status: 'working',
-    current_task: 'implementando feature X',
+    current_task: 'implementing feature X',
     progress: null,
     last_heartbeat: '2026-03-01T00:00:01Z',
     messages_count: 2,
@@ -66,7 +66,7 @@ beforeEach(() => {
     vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockAgents),
-    }),
+    })
   )
 })
 
@@ -79,18 +79,18 @@ afterEach(() => {
 
 const { useOfficeState } = await import('./useOfficeState')
 
-describe('useOfficeState — carga inicial', () => {
-  it('começa em estado de loading e termina sem erro', async () => {
+describe('useOfficeState — initial load', () => {
+  it('starts in loading state and finishes without error', async () => {
     const { result } = renderHook(() => useOfficeState())
-    // Estado inicial: loading=true, agents vazio
+    // Initial state: loading=true, agents empty
     expect(result.current.isLoading).toBe(true)
     expect(result.current.agents).toHaveLength(0)
-    // Após fetch resolver: loading=false, agents preenchidos
+    // After fetch resolves: loading=false, agents populated
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.error).toBeNull()
   })
 
-  it('carrega agentes da API e calcula zona/posição', async () => {
+  it('loads agents from API and calculates zone/position', async () => {
     const { result } = renderHook(() => useOfficeState())
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -99,31 +99,31 @@ describe('useOfficeState — carga inicial', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('agente idle vai para coffee-corner', async () => {
+  it('idle agent goes to coffee-corner', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const architect = result.current.agents.find(a => a.id === 'rx-architect')
+    const architect = result.current.agents.find((a) => a.id === 'rx-architect')
     expect(architect?.zoneId).toBe('coffee-corner')
   })
 
-  it('agente working sem action específica vai para dev-zone', async () => {
+  it('working agent with no specific action goes to dev-zone', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const backend = result.current.agents.find(a => a.id === 'rx-backend')
+    const backend = result.current.agents.find((a) => a.id === 'rx-backend')
     expect(backend?.zoneId).toBe('dev-zone')
   })
 
-  it('agente thinking com review action vai para review-room', async () => {
+  it('thinking agent with review action goes to review-room', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const orchestrator = result.current.agents.find(a => a.id === 'rx-orchestrator')
+    const orchestrator = result.current.agents.find((a) => a.id === 'rx-orchestrator')
     expect(orchestrator?.zoneId).toBe('review-room')
   })
 
-  it('agentes têm posição calculada (x e y são números)', async () => {
+  it('agents have calculated position (x and y are numbers)', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -133,15 +133,15 @@ describe('useOfficeState — carga inicial', () => {
     }
   })
 
-  it('mapeia currentTask a partir de current_task da API', async () => {
+  it('maps currentTask from API current_task', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const backend = result.current.agents.find(a => a.id === 'rx-backend')
-    expect(backend?.currentTask).toBe('implementando feature X')
+    const backend = result.current.agents.find((a) => a.id === 'rx-backend')
+    expect(backend?.currentTask).toBe('implementing feature X')
   })
 
-  it('speechText começa como null', async () => {
+  it('speechText starts as null', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -151,12 +151,9 @@ describe('useOfficeState — carga inicial', () => {
   })
 })
 
-describe('useOfficeState — erro na API', () => {
-  it('define error e sai do loading quando fetch falha', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
-    )
+describe('useOfficeState — API error', () => {
+  it('sets error and exits loading when fetch fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
 
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -166,8 +163,8 @@ describe('useOfficeState — erro na API', () => {
   })
 })
 
-describe('useOfficeState — eventos socket', () => {
-  it('atualiza zona do agente ao receber agent:status:updated', async () => {
+describe('useOfficeState — socket events', () => {
+  it('updates agent zone when agent:status:updated is received', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -176,25 +173,25 @@ describe('useOfficeState — eventos socket', () => {
       handler?.({ agentId: 'rx-architect', status: 'working', lastAction: 'revisando PR #12' })
     })
 
-    const architect = result.current.agents.find(a => a.id === 'rx-architect')
+    const architect = result.current.agents.find((a) => a.id === 'rx-architect')
     expect(architect?.zoneId).toBe('review-room')
     expect(architect?.status).toBe('working')
   })
 
-  it('exibe speechText ao receber bus:message', async () => {
+  it('shows speechText when bus:message is received', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => {
       const handler = socketListeners.get('bus:message')
-      handler?.({ from: 'rx-backend', payload: { content: 'Iniciando análise' } })
+      handler?.({ from: 'rx-backend', payload: { content: 'Starting analysis' } })
     })
 
-    const backend = result.current.agents.find(a => a.id === 'rx-backend')
-    expect(backend?.speechText).toBe('Iniciando análise')
+    const backend = result.current.agents.find((a) => a.id === 'rx-backend')
+    expect(backend?.speechText).toBe('Starting analysis')
   })
 
-  it('bus:message sem content não altera speechText', async () => {
+  it('bus:message without content does not change speechText', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -203,12 +200,12 @@ describe('useOfficeState — eventos socket', () => {
       handler?.({ from: 'rx-backend', payload: {} })
     })
 
-    const backend = result.current.agents.find(a => a.id === 'rx-backend')
+    const backend = result.current.agents.find((a) => a.id === 'rx-backend')
     expect(backend?.speechText).toBeNull()
   })
 
-  it('limpa speechText após 5 segundos', async () => {
-    // Carregar antes de ativar fake timers (evita conflito com waitFor/fetch)
+  it('clears speechText after 5 seconds', async () => {
+    // Load before activating fake timers (avoids conflict with waitFor/fetch)
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -216,17 +213,19 @@ describe('useOfficeState — eventos socket', () => {
 
     act(() => {
       const handler = socketListeners.get('bus:message')
-      handler?.({ from: 'rx-backend', payload: { content: 'Trabalhando...' } })
+      handler?.({ from: 'rx-backend', payload: { content: 'Working...' } })
     })
 
-    expect(result.current.agents.find(a => a.id === 'rx-backend')?.speechText).toBe('Trabalhando...')
+    expect(result.current.agents.find((a) => a.id === 'rx-backend')?.speechText).toBe('Working...')
 
-    act(() => { vi.advanceTimersByTime(5000) })
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
 
-    expect(result.current.agents.find(a => a.id === 'rx-backend')?.speechText).toBeNull()
+    expect(result.current.agents.find((a) => a.id === 'rx-backend')?.speechText).toBeNull()
   })
 
-  it('adiciona usuário ao receber office:user:joined', async () => {
+  it('adds user when office:user:joined is received', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -239,12 +238,18 @@ describe('useOfficeState — eventos socket', () => {
     expect(result.current.users[0].name).toBe('Alice')
   })
 
-  it('remove usuário ao receber office:user:left', async () => {
+  it('removes user when office:user:left is received', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => {
-      socketListeners.get('office:user:joined')?.({ socketId: 'abc123', userId: 'user-1', name: 'Alice', x: 50, y: 88 })
+      socketListeners.get('office:user:joined')?.({
+        socketId: 'abc123',
+        userId: 'user-1',
+        name: 'Alice',
+        x: 50,
+        y: 88,
+      })
     })
     act(() => {
       socketListeners.get('office:user:left')?.({ socketId: 'abc123' })
@@ -253,25 +258,31 @@ describe('useOfficeState — eventos socket', () => {
     expect(result.current.users).toHaveLength(0)
   })
 
-  it('atualiza posição do usuário ao receber office:user:moved', async () => {
+  it('updates user position when office:user:moved is received', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => {
-      socketListeners.get('office:user:joined')?.({ socketId: 'abc123', userId: 'user-1', name: 'Alice', x: 50, y: 88 })
+      socketListeners.get('office:user:joined')?.({
+        socketId: 'abc123',
+        userId: 'user-1',
+        name: 'Alice',
+        x: 50,
+        y: 88,
+      })
     })
     act(() => {
       socketListeners.get('office:user:moved')?.({ socketId: 'abc123', x: 30, y: 60 })
     })
 
-    const user = result.current.users.find(u => u.socketId === 'abc123')
+    const user = result.current.users.find((u) => u.socketId === 'abc123')
     expect(user?.x).toBe(30)
     expect(user?.y).toBe(60)
   })
 })
 
 describe('useOfficeState — cleanup', () => {
-  it('remove listeners do socket ao desmontar', async () => {
+  it('removes socket listeners on unmount', async () => {
     const { result, unmount } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 

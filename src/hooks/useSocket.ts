@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { connectSocket, socket } from '../services/socket'
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error'
+export type ConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'error'
 
 export function useSocket() {
   const [status, setStatus] = useState<ConnectionStatus>(() =>
-    socket.connected ? 'connected' : 'connecting',
+    socket.connected ? 'connected' : 'connecting'
   )
 
   useEffect(() => {
-    // Inicia a conexão ao montar — autoConnect está desabilitado no singleton
+    // Start connection on mount — autoConnect is disabled on the singleton
     connectSocket()
 
-    // Resolve race condition: verifica estado atual após mount
+    // Resolve race condition: check current state after mount
     if (socket.connected) setStatus('connected')
 
     const onConnect = () => setStatus('connected')
@@ -33,6 +38,6 @@ export function useSocket() {
     }
   }, [])
 
-  // useMemo evita recriar o objeto a cada render (socket é singleton, só status muda)
+  // useMemo avoids recreating the object on every render (socket is singleton, only status changes)
   return useMemo(() => ({ socket, status }), [status])
 }

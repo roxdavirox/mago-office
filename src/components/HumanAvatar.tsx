@@ -6,19 +6,15 @@ import type { UserOfficeData } from '../hooks/useOfficeState'
 
 interface HumanAvatarProps {
   user: UserOfficeData
-  /** Indica se este é o avatar do próprio usuário (draggable) */
+  /** Whether this is the current user's own avatar (draggable) */
   isMe: boolean
-  /** Ref do elemento canvas para calcular constraints de drag */
+  /** Ref to the canvas element for calculating drag constraints */
   canvasRef: React.RefObject<HTMLDivElement | null>
 }
 
 const EMIT_DEBOUNCE_MS = 100
 
-export const HumanAvatar = memo(function HumanAvatar({
-  user,
-  isMe,
-  canvasRef,
-}: HumanAvatarProps) {
+export const HumanAvatar = memo(function HumanAvatar({ user, isMe, canvasRef }: HumanAvatarProps) {
   const color = hashColor(user.userId)
   const label = initials(user.name)
   const lastEmitAt = useRef(0)
@@ -34,20 +30,20 @@ export const HumanAvatar = memo(function HumanAvatar({
       const x = toPercent(info.point.x - rect.left, rect.width)
       const y = toPercent(info.point.y - rect.top, rect.height)
 
-      // Debounce para evitar flood de eventos
+      // Debounce to avoid event flooding
       const now = Date.now()
       if (now - lastEmitAt.current < EMIT_DEBOUNCE_MS) return
       lastEmitAt.current = now
 
       getSocket().emit('office:user:move', { x, y })
     },
-    [isMe, canvasRef],
+    [isMe, canvasRef]
   )
 
   return (
     <motion.div
       role={isMe ? 'button' : undefined}
-      aria-label={isMe ? `seu avatar: ${user.name}, arraste para mover` : `usuário ${user.name}`}
+      aria-label={isMe ? `your avatar: ${user.name}, drag to move` : `user ${user.name}`}
       aria-grabbed={isMe ? false : undefined}
       tabIndex={isMe ? 0 : undefined}
       style={{
@@ -63,7 +59,7 @@ export const HumanAvatar = memo(function HumanAvatar({
         userSelect: 'none',
         zIndex: isMe ? 20 : 10,
       }}
-      // Animar suavemente para nova posição (outros usuários)
+      // Smoothly animate to new position (other users)
       animate={{ left: `${user.x}%`, top: `${user.y}%` }}
       transition={{ type: 'spring', stiffness: 200, damping: 25 }}
       drag={isMe || undefined}
@@ -72,7 +68,7 @@ export const HumanAvatar = memo(function HumanAvatar({
       whileDrag={{ scale: 1.12, cursor: 'grabbing', zIndex: 1000 }}
       onDragEnd={handleDragEnd}
     >
-      {/* Avatar circular */}
+      {/* Circular avatar */}
       <div
         style={{
           width: 32,
@@ -93,7 +89,7 @@ export const HumanAvatar = memo(function HumanAvatar({
         {label}
       </div>
 
-      {/* Badge YOU + nome */}
+      {/* YOU badge + name */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
         {isMe && (
           <span

@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client'
 
 const BACKEND_URL = import.meta.env.VITE_MAGO_BACKEND_URL ?? 'http://localhost:3002'
 
-// --- Tipos dos eventos emitidos pelo MAGO backend ---
+// --- Types for events emitted by the MAGO backend ---
 
 export interface AgentStatus {
   agentId: string
@@ -36,7 +36,7 @@ export interface OfficeUser {
   y: number
 }
 
-// --- Mapa de eventos (ServerToClient) ---
+// --- Event map (ServerToClient) ---
 
 export interface ServerToClientEvents {
   'agent:status:updated': (data: AgentStatus) => void
@@ -56,8 +56,8 @@ export interface ClientToServerEvents {
 export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
 // --- Singleton ---
-// autoConnect: false — conexão iniciada explicitamente via connectSocket()
-// para permitir controle do ciclo de vida e facilitar testes
+// autoConnect: false — connection started explicitly via connectSocket()
+// to allow lifecycle control and facilitate testing
 
 export const socket: TypedSocket = io(BACKEND_URL, {
   reconnection: true,
@@ -73,7 +73,7 @@ export function connectSocket(): void {
   }
 }
 
-/** Retorna a instância singleton do socket — uso em hooks e testes. */
+/** Returns the singleton socket instance — used in hooks and tests. */
 export function getSocket(): TypedSocket {
   return socket
 }

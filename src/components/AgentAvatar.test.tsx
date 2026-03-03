@@ -33,7 +33,7 @@ const mockAgent: AgentOfficeData = {
   name: 'Architect',
   role: 'architect',
   status: 'idle',
-  currentTask: 'Aguardando próximo ciclo',
+  currentTask: 'Waiting for next cycle',
   zoneId: 'coffee-corner',
   position: { x: 30, y: 50 },
   color: '#8b5cf6',
@@ -41,27 +41,27 @@ const mockAgent: AgentOfficeData = {
 }
 
 describe('AgentAvatar', () => {
-  it('renderiza o nome do agente', () => {
+  it('renders the agent name', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(screen.getByText('Architect')).toBeTruthy()
   })
 
-  it('renderiza o ícone correto para role architect', () => {
+  it('renders the correct icon for role architect', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(screen.getByText('🤖')).toBeTruthy()
   })
 
-  it('renderiza ícone correto para role backend', () => {
+  it('renders the correct icon for role backend', () => {
     render(<AgentAvatar agent={{ ...mockAgent, role: 'backend' }} />)
     expect(screen.getByText('🔬')).toBeTruthy()
   })
 
-  it('renderiza ícone correto para role orchestrator', () => {
+  it('renders the correct icon for role orchestrator', () => {
     render(<AgentAvatar agent={{ ...mockAgent, role: 'orchestrator' }} />)
     expect(screen.getByText('⚡')).toBeTruthy()
   })
 
-  it('chama onClick ao clicar', () => {
+  it('calls onClick when clicked', () => {
     const onClick = vi.fn()
     render(<AgentAvatar agent={mockAgent} onClick={onClick} />)
     const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
@@ -69,33 +69,33 @@ describe('AgentAvatar', () => {
     expect(onClick).toHaveBeenCalledWith(mockAgent)
   })
 
-  it('não renderiza SpeechBubble quando speechText é null', () => {
+  it('does not render SpeechBubble when speechText is null', () => {
     render(<AgentAvatar agent={mockAgent} />)
-    expect(screen.queryByText(/aguardando/i)).toBeNull()
+    expect(screen.queryByText(/waiting/i)).toBeNull()
   })
 
-  it('renderiza SpeechBubble quando speechText está preenchido', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, speechText: 'Analisando código' }} />)
-    expect(screen.getByText('Analisando código')).toBeTruthy()
+  it('renders SpeechBubble when speechText is set', () => {
+    render(<AgentAvatar agent={{ ...mockAgent, speechText: 'Analyzing code' }} />)
+    expect(screen.getByText('Analyzing code')).toBeTruthy()
   })
 
-  it('badge tem aria-label com o status atual', () => {
+  it('badge has aria-label with current status', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(document.querySelector('[aria-label="status: idle"]')).toBeTruthy()
   })
 
-  it('agente offline tem opacidade reduzida', () => {
+  it('offline agent has reduced opacity', () => {
     render(<AgentAvatar agent={{ ...mockAgent, status: 'offline' }} />)
     const circle = document.querySelector('[style*="opacity: 0.35"]')
     expect(circle).toBeTruthy()
   })
 
-  it('tem aria-label com nome e status do agente', () => {
+  it('has aria-label with agent name and status', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(document.querySelector('[aria-label*="Architect"]')).toBeTruthy()
   })
 
-  describe('tooltip com fake timers', () => {
+  describe('tooltip with fake timers', () => {
     beforeEach(() => {
       vi.useFakeTimers()
     })
@@ -103,7 +103,7 @@ describe('AgentAvatar', () => {
       vi.useRealTimers()
     })
 
-    it('tooltip aparece após 400ms de hover', () => {
+    it('tooltip appears after 400ms of hover', () => {
       render(<AgentAvatar agent={mockAgent} />)
       const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
       fireEvent.mouseEnter(container)
@@ -114,7 +114,7 @@ describe('AgentAvatar', () => {
       expect(screen.getByRole('tooltip')).toBeTruthy()
     })
 
-    it('tooltip desaparece ao mouseLeave', () => {
+    it('tooltip disappears on mouseLeave', () => {
       render(<AgentAvatar agent={mockAgent} />)
       const container = document.querySelector('[style*="position: absolute"]') as HTMLElement
       fireEvent.mouseEnter(container)

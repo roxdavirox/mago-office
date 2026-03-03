@@ -10,7 +10,7 @@ interface OfficeCanvasProps {
   connectionStatus: ConnectionStatus
   agentCount?: number
   humanCount?: number
-  /** Ref para o elemento raiz — usado como dragConstraints pelo HumanAvatar */
+  /** Ref to the root element — used as dragConstraints by HumanAvatar */
   canvasRef?: RefObject<HTMLDivElement | null>
 }
 
@@ -45,18 +45,18 @@ export function OfficeCanvas({
         fontFamily: 'JetBrains Mono, monospace',
       }}
     >
-      {/* Grid decorativo */}
+      {/* Decorative grid */}
       <div style={gridStyle} />
 
-      {/* Zonas do escritório */}
+      {/* Office zones */}
       {OFFICE_ZONES.map((zone) => (
         <OfficeRoom key={zone.id} zone={zone} />
       ))}
 
-      {/* Avatares (agents + humans) — passados como children */}
+      {/* Avatars (agents + humans) — passed as children */}
       {children}
 
-      {/* HUD: status de conexão + contagem */}
+      {/* HUD: connection status + counts */}
       <OfficeHUD
         connectionStatus={connectionStatus}
         agentCount={agentCount}

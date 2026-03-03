@@ -1,15 +1,15 @@
 /**
- * Normaliza cor CSS para o formato canônico `rgb(r, g, b)`.
+ * Normalizes a CSS color to the canonical `rgb(r, g, b)` format.
  *
- * Necessário porque happy-dom retorna estilos computados em hex (#rrggbb)
- * enquanto jsdom retornava rgb(). Garante asserções de cor agnósticas ao
- * ambiente de teste.
+ * Needed because happy-dom returns computed styles as hex (#rrggbb)
+ * while jsdom returned rgb(). Ensures color assertions are agnostic to
+ * the test environment.
  *
- * Formatos suportados:
+ * Supported formats:
  * - `#rgb`              → rgb(r, g, b)
  * - `#rrggbb`           → rgb(r, g, b)
- * - `rgb(r, g, b)`      → rgb(r, g, b)  (vírgulas com ou sem espaço)
- * - `rgb(r g b)`        → rgb(r, g, b)  (CSS moderno sem vírgulas)
+ * - `rgb(r, g, b)`      → rgb(r, g, b)  (commas with or without space)
+ * - `rgb(r g b)`        → rgb(r, g, b)  (modern CSS without commas)
  *
  * @example
  * toRgb('#00ff41')       // → 'rgb(0, 255, 65)'
@@ -31,7 +31,7 @@ export function toRgb(color: string): string {
     const b = parseInt(full.slice(4, 6), 16)
     return `rgb(${r}, ${g}, ${b})`
   }
-  // Cobre rgb(r,g,b) com vírgulas E rgb(r g b) moderno sem vírgulas
+  // Covers rgb(r,g,b) with commas AND modern rgb(r g b) without commas
   return color.replace(
     /rgb\(\s*(\d+)\s*[,\s]\s*(\d+)\s*[,\s]\s*(\d+)\s*\)/,
     (_, r, g, b) => `rgb(${r}, ${g}, ${b})`

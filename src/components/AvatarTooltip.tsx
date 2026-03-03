@@ -10,7 +10,7 @@ export interface TooltipLine {
 
 interface AvatarTooltipProps {
   lines: TooltipLine[]
-  /** Posiciona acima (padrão) ou abaixo */
+  /** Positions above (default) or below */
   placement?: 'top' | 'bottom'
 }
 

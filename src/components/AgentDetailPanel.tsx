@@ -17,15 +17,15 @@ interface ChatMessage {
 
 const PANEL_VARIANTS = {
   hidden: { x: '100%', opacity: 0 },
-  visible: { x: 0, opacity: 1, transition: { type: 'spring' as const, damping: 20, stiffness: 200 } },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: { type: 'spring' as const, damping: 20, stiffness: 200 },
+  },
   exit: { x: '100%', opacity: 0, transition: { duration: 0.2 } },
 }
 
-const QUICK_MESSAGES = [
-  'Qual sua task atual?',
-  'Pause e aguarde',
-  'Continue normalmente',
-]
+const QUICK_MESSAGES = ['What is your current task?', 'Pause and wait', 'Continue normally']
 
 const CELEBRO_URL =
   (import.meta.env.VITE_CELEBRO_URL as string | undefined) ?? 'http://localhost:3099/chat'
@@ -33,7 +33,7 @@ const CELEBRO_URL =
 const FETCH_TIMEOUT_MS = 10_000
 
 function formatTime(date: Date): string {
-  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 }
 
 export const AgentDetailPanel = memo(function AgentDetailPanel({
@@ -51,7 +51,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
   const statusColor = STATUS_COLOR[agent.status as keyof typeof STATUS_COLOR] ?? '#6b7280'
   const statusLabel = STATUS_LABEL[agent.status as keyof typeof STATUS_LABEL] ?? agent.status
 
-  // Fechar com Escape
+  // Close with Escape
   useEffect(() => {
     function onKey(e: globalThis.KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -60,12 +60,12 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Focar input ao abrir
+  // Focus input on open
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  // Scroll para última mensagem
+  // Scroll to last message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -80,7 +80,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
         text: text.trim(),
         timestamp: new Date(),
       }
-      setMessages(prev => [...prev, userMsg])
+      setMessages((prev) => [...prev, userMsg])
       setInput('')
       setIsSending(true)
       setSendFeedback(null)
@@ -92,7 +92,11 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
         const res = await fetch(CELEBRO_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text.trim(), context: 'office-view', agentHint: agent.id }),
+          body: JSON.stringify({
+            message: text.trim(),
+            context: 'office-view',
+            agentHint: agent.id,
+          }),
           signal: controller.signal,
         })
         clearTimeout(timeoutId)
@@ -106,16 +110,16 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           text: data.response ?? 'OK',
           timestamp: new Date(),
         }
-        setMessages(prev => [...prev, agentMsg])
-        setSendFeedback('Mensagem enviada!')
+        setMessages((prev) => [...prev, agentMsg])
+        setSendFeedback('Message sent!')
       } catch {
-        setSendFeedback('Erro ao enviar. Tente novamente.')
+        setSendFeedback('Failed to send. Please try again.')
       } finally {
         setIsSending(false)
         setTimeout(() => setSendFeedback(null), 3000)
       }
     },
-    [agent.id, isSending],
+    [agent.id, isSending]
   )
 
   function handleSubmit(e: React.FormEvent) {
@@ -125,7 +129,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
 
   return (
     <>
-      {/* Overlay para fechar clicando fora */}
+      {/* Overlay to close when clicking outside */}
       <div
         aria-hidden="true"
         onClick={onClose}
@@ -136,10 +140,10 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
         }}
       />
 
-      {/* Painel */}
+      {/* Panel */}
       <motion.aside
         role="complementary"
-        aria-label={`Detalhes do agente ${agent.name}`}
+        aria-label={`Agent details: ${agent.name}`}
         variants={PANEL_VARIANTS}
         initial="hidden"
         animate="visible"
@@ -186,7 +190,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
             </div>
           </div>
           <button
-            aria-label="Fechar painel"
+            aria-label="Close panel"
             onClick={onClose}
             style={{
               background: 'none',
@@ -202,7 +206,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           </button>
         </div>
 
-        {/* Status + Zona */}
+        {/* Status + Zone */}
         <div
           style={{
             padding: '10px 16px',
@@ -217,12 +221,12 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
             <div style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</div>
           </div>
           <div>
-            <div style={{ color: '#4b5563', marginBottom: 2 }}>ZONA</div>
+            <div style={{ color: '#4b5563', marginBottom: 2 }}>ZONE</div>
             <div style={{ color: '#9ca3af' }}>{agent.zoneId}</div>
           </div>
         </div>
 
-        {/* Task atual */}
+        {/* Current task */}
         {agent.currentTask && (
           <div
             style={{
@@ -232,7 +236,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
             }}
           >
             <div style={{ color: '#4b5563', marginBottom: 4, letterSpacing: '0.08em' }}>
-              TASK ATUAL
+              CURRENT TASK
             </div>
             <div
               style={{
@@ -246,9 +250,9 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           </div>
         )}
 
-        {/* Mensagens da sessão */}
+        {/* Session messages */}
         <div
-          aria-label="histórico de mensagens"
+          aria-label="message history"
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -260,11 +264,11 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
         >
           {messages.length === 0 && (
             <div style={{ color: '#374151', fontSize: 10, textAlign: 'center', marginTop: 20 }}>
-              nenhuma mensagem ainda
+              no messages yet
             </div>
           )}
           <AnimatePresence initial={false}>
-            {messages.map(msg => (
+            {messages.map((msg) => (
               <motion.div
                 key={msg.id}
                 initial={{ opacity: 0, y: 6 }}
@@ -309,7 +313,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
             flexWrap: 'wrap',
           }}
         >
-          {QUICK_MESSAGES.map(q => (
+          {QUICK_MESSAGES.map((q) => (
             <button
               key={q}
               onClick={() => void sendMessage(q)}
@@ -331,7 +335,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           ))}
         </div>
 
-        {/* Input */}
+        {/* Input form */}
         <form
           onSubmit={handleSubmit}
           style={{
@@ -345,10 +349,10 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           <input
             ref={inputRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="mensagem para o agente..."
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="message to agent..."
             disabled={isSending}
-            aria-label="mensagem para o agente"
+            aria-label="message to agent"
             style={{
               flex: 1,
               background: '#161b22',
@@ -364,7 +368,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           <button
             type="submit"
             disabled={isSending || !input.trim()}
-            aria-label="enviar mensagem"
+            aria-label="send message"
             style={{
               background: input.trim() && !isSending ? `${color}22` : '#1f2937',
               border: `1px solid ${input.trim() && !isSending ? `${color}44` : '#374151'}`,
@@ -381,7 +385,7 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
           </button>
         </form>
 
-        {/* Feedback de envio */}
+        {/* Send feedback */}
         <AnimatePresence>
           {sendFeedback && (
             <motion.div
@@ -394,11 +398,11 @@ export const AgentDetailPanel = memo(function AgentDetailPanel({
                 left: 16,
                 right: 16,
                 padding: '4px 10px',
-                background: sendFeedback.startsWith('Erro') ? '#7f1d1d' : '#14532d',
-                border: `1px solid ${sendFeedback.startsWith('Erro') ? '#991b1b' : '#166534'}`,
+                background: sendFeedback.startsWith('Failed') ? '#7f1d1d' : '#14532d',
+                border: `1px solid ${sendFeedback.startsWith('Failed') ? '#991b1b' : '#166534'}`,
                 borderRadius: 4,
                 fontSize: 10,
-                color: sendFeedback.startsWith('Erro') ? '#fca5a5' : '#86efac',
+                color: sendFeedback.startsWith('Failed') ? '#fca5a5' : '#86efac',
                 textAlign: 'center',
               }}
             >

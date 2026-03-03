@@ -1,6 +1,6 @@
 /**
- * Paleta de cores para avatares humanos.
- * Gerada via hash do userId — distribuição uniforme.
+ * Color palette for human avatars.
+ * Generated via userId hash — uniform distribution.
  */
 const AVATAR_PALETTE = [
   '#3b82f6', // blue
@@ -13,7 +13,7 @@ const AVATAR_PALETTE = [
   '#f43f5e', // rose
 ]
 
-/** Retorna uma cor estável para um dado userId. */
+/** Returns a stable color for a given userId. */
 export function hashColor(userId: string): string {
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
@@ -22,7 +22,7 @@ export function hashColor(userId: string): string {
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]
 }
 
-/** Retorna as iniciais (até 2 letras) de um nome. */
+/** Returns the initials (up to 2 letters) of a name. */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
@@ -30,8 +30,8 @@ export function initials(name: string): string {
 }
 
 /**
- * Converte uma posição em pixels (relativa ao container) para percentual (0–100).
- * Clampeia para garantir que o avatar fique dentro dos limites.
+ * Converts a pixel position (relative to the container) to percentage (0–100).
+ * Clamps to ensure the avatar stays within bounds.
  */
 export function toPercent(px: number, total: number): number {
   return Math.min(100, Math.max(0, (px / total) * 100))

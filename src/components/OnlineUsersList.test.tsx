@@ -41,47 +41,45 @@ const mockUsers: UserOfficeData[] = [
 ]
 
 describe('OnlineUsersList', () => {
-  it('não renderiza quando lista está vazia', () => {
-    const { container } = render(
-      <OnlineUsersList users={[]} mySocketId={null} />,
-    )
+  it('does not render when list is empty', () => {
+    const { container } = render(<OnlineUsersList users={[]} mySocketId={null} />)
     expect(container.firstChild).toBeNull()
   })
 
-  it('exibe cabeçalho com contagem de usuários', () => {
+  it('shows header with user count', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId={null} />)
     expect(screen.getByText(/online · 2/i)).toBeTruthy()
   })
 
-  it('exibe nome de todos os usuários', () => {
+  it('shows all user names', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId={null} />)
     expect(screen.getByText('Alice Lima')).toBeTruthy()
     expect(screen.getByText('Bob Silva')).toBeTruthy()
   })
 
-  it('exibe badge you apenas para o próprio usuário', () => {
+  it('shows you badge only for own user', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId="sock-1" />)
     expect(screen.getByText('you')).toBeTruthy()
   })
 
-  it('não exibe badge you quando mySocketId não corresponde', () => {
+  it('does not show you badge when mySocketId does not match', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId="sock-999" />)
     expect(screen.queryByText('you')).toBeNull()
   })
 
-  it('tem role list e aria-label para acessibilidade', () => {
+  it('has list role and aria-label for accessibility', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId={null} />)
-    const list = screen.getByRole('list', { name: /usuários online/i })
+    const list = screen.getByRole('list', { name: /online users/i })
     expect(list).toBeTruthy()
   })
 
-  it('exibe as iniciais de cada usuário', () => {
+  it('shows initials of each user', () => {
     render(<OnlineUsersList users={mockUsers} mySocketId={null} />)
     expect(screen.getByText('AL')).toBeTruthy()
     expect(screen.getByText('BS')).toBeTruthy()
   })
 
-  it('exibe contagem correta com 1 usuário', () => {
+  it('shows correct count with 1 user', () => {
     render(<OnlineUsersList users={[mockUsers[0]]} mySocketId={null} />)
     expect(screen.getByText(/online · 1/i)).toBeTruthy()
   })

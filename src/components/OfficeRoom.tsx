@@ -22,7 +22,7 @@ export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Header da zona */}
+      {/* Zone header */}
       <div
         style={{
           display: 'flex',

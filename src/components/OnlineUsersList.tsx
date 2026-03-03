@@ -14,13 +14,7 @@ const ITEM_VARIANTS = {
   exit: { opacity: 0, x: -12, transition: { duration: 0.15 } },
 }
 
-const UserRow = memo(function UserRow({
-  user,
-  isMe,
-}: {
-  user: UserOfficeData
-  isMe: boolean
-}) {
+const UserRow = memo(function UserRow({ user, isMe }: { user: UserOfficeData; isMe: boolean }) {
   const color = user.userId ? hashColor(user.userId) : '#6b7280'
   const label = user.name ? initials(user.name) : '?'
 
@@ -38,7 +32,7 @@ const UserRow = memo(function UserRow({
         padding: '3px 0',
       }}
     >
-      {/* Avatar circular mini */}
+      {/* Mini circular avatar */}
       <div
         aria-hidden="true"
         style={{
@@ -59,7 +53,7 @@ const UserRow = memo(function UserRow({
         {label}
       </div>
 
-      {/* Nome */}
+      {/* Name */}
       <span
         style={{
           fontSize: 10,
@@ -73,9 +67,7 @@ const UserRow = memo(function UserRow({
         title={user.name}
       >
         {user.name}
-        {isMe && (
-          <span style={{ color, opacity: 0.7, marginLeft: 4, fontSize: 8 }}>you</span>
-        )}
+        {isMe && <span style={{ color, opacity: 0.7, marginLeft: 4, fontSize: 8 }}>you</span>}
       </span>
     </motion.div>
   )
@@ -90,7 +82,7 @@ export const OnlineUsersList = memo(function OnlineUsersList({
   return (
     <div
       role="list"
-      aria-label="usuários online"
+      aria-label="online users"
       style={{
         position: 'fixed',
         top: 16,
@@ -106,7 +98,7 @@ export const OnlineUsersList = memo(function OnlineUsersList({
         zIndex: 50,
       }}
     >
-      {/* Cabeçalho */}
+      {/* Header */}
       <div
         style={{
           fontSize: 9,
@@ -121,9 +113,9 @@ export const OnlineUsersList = memo(function OnlineUsersList({
         online · {users.length}
       </div>
 
-      {/* Lista com AnimatePresence para animações de join/leave */}
+      {/* List with AnimatePresence for join/leave animations */}
       <AnimatePresence initial={false}>
-        {users.map(user => (
+        {users.map((user) => (
           <div key={user.socketId} role="listitem">
             <UserRow user={user} isMe={user.socketId === mySocketId} />
           </div>
