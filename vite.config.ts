@@ -5,6 +5,7 @@ import type { UserConfig } from 'vitest/config'
 const testConfig: UserConfig['test'] = {
   environment: 'happy-dom',
   globals: true,
+  exclude: ['node_modules', 'dist', 'e2e'],
 }
 
 export default defineConfig({
