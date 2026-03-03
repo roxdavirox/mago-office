@@ -9,6 +9,35 @@ interface OfficeHUDProps {
   humanCount?: number
 }
 
+const STYLES = {
+  container: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '6px 12px',
+    background: COLORS.hudBg,
+    border: `1px solid ${COLORS.zoneBorder}`,
+    borderRadius: 6,
+    backdropFilter: 'blur(8px)',
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: 11,
+    color: COLORS.label,
+  } as React.CSSProperties,
+
+  statusRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 5,
+  } as React.CSSProperties,
+
+  separator: {
+    color: COLORS.separator,
+  } as React.CSSProperties,
+}
+
 export const OfficeHUD = memo(function OfficeHUD({
   connectionStatus,
   agentCount = 0,
@@ -18,26 +47,9 @@ export const OfficeHUD = memo(function OfficeHUD({
   const label = STATUS_LABEL[connectionStatus]
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 16,
-        right: 16,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '6px 12px',
-        background: COLORS.hudBg,
-        border: `1px solid ${COLORS.zoneBorder}`,
-        borderRadius: 6,
-        backdropFilter: 'blur(8px)',
-        fontFamily: 'JetBrains Mono, monospace',
-        fontSize: 11,
-        color: COLORS.label,
-      }}
-    >
+    <div style={STYLES.container}>
       {/* Connection status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <div style={STYLES.statusRow}>
         <span
           aria-label={`status: ${label}`}
           role="status"
@@ -52,7 +64,7 @@ export const OfficeHUD = memo(function OfficeHUD({
         <span style={{ color }}>{label}</span>
       </div>
 
-      <span style={{ color: COLORS.separator }}>│</span>
+      <span style={STYLES.separator}>│</span>
 
       {/* Online agents */}
       <span>
@@ -61,7 +73,7 @@ export const OfficeHUD = memo(function OfficeHUD({
 
       {humanCount > 0 && (
         <>
-          <span style={{ color: COLORS.separator }}>│</span>
+          <span style={STYLES.separator}>│</span>
           <span>
             {humanCount} human{humanCount !== 1 ? 's' : ''}
           </span>
