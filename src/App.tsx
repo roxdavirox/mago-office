@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useSocket } from './hooks/useSocket'
 import { useOfficeState } from './hooks/useOfficeState'
 import type { AgentOfficeData } from './hooks/useOfficeState'
+import type { ZoneOverride } from './hooks/useOfficeState'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
@@ -12,7 +13,7 @@ import { getSocket } from './services/socket'
 
 export function App() {
   const { status } = useSocket()
-  const { agents, users } = useOfficeState()
+  const { agents, users, setZoneOverride, clearZoneOverride } = useOfficeState()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
@@ -28,6 +29,20 @@ export function App() {
     setSelectedAgentId(null)
   }, [])
 
+  const handleZoneOverride = useCallback(
+    (agentId: string, override: ZoneOverride) => {
+      setZoneOverride(agentId, override)
+    },
+    [setZoneOverride]
+  )
+
+  const handleClearOverride = useCallback(
+    (agentId: string) => {
+      clearZoneOverride(agentId)
+    },
+    [clearZoneOverride]
+  )
+
   return (
     <>
       <OfficeCanvas
@@ -42,6 +57,9 @@ export function App() {
             agent={agent}
             onClick={handleAgentClick}
             isSelected={agent.id === selectedAgentId}
+            canvasRef={canvasRef}
+            onZoneOverride={handleZoneOverride}
+            onClearOverride={handleClearOverride}
           />
         ))}
         {users.map((user) => (

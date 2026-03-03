@@ -54,6 +54,7 @@ const mockAgent: AgentOfficeData = {
   position: { x: 50, y: 50 },
   color: '#8b5cf6',
   speechText: null,
+  isManualOverride: false,
 }
 
 describe('AgentDetailPanel', () => {
