@@ -5,6 +5,9 @@ import type { AgentOfficeData } from '../hooks/useOfficeState'
 
 type MotionDivProps = React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>
 
+// Captures the last onDragEnd handler passed by AgentAvatar so tests can invoke it
+let capturedOnDragEnd: ((_e: unknown, info: unknown) => void) | undefined
+
 vi.mock('framer-motion', async () => {
   const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion')
   return {
@@ -25,11 +28,16 @@ vi.mock('framer-motion', async () => {
         dragConstraints: _dc,
         dragElastic: _de,
         dragMomentum: _dm,
-        onDragEnd: _ode,
+        onDragEnd,
         x: _x,
         y: _y,
         ...rest
-      }: MotionDivProps) => <div {...rest}>{children}</div>,
+      }: MotionDivProps) => {
+        if (typeof onDragEnd === 'function') {
+          capturedOnDragEnd = onDragEnd as (_e: unknown, info: unknown) => void
+        }
+        return <div {...rest}>{children}</div>
+      },
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     layoutId: undefined,
@@ -135,6 +143,99 @@ describe('AgentAvatar', () => {
       )
       fireEvent.click(screen.getByRole('button', { name: /reset position/i }))
       expect(onClear).toHaveBeenCalledWith('rx-architect')
+    })
+  })
+
+  describe('drag handler', () => {
+    beforeEach(() => {
+      capturedOnDragEnd = undefined
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    /** Build a canvas mock with a specific getBoundingClientRect */
+    function makeCanvasRef(rect: { left: number; top: number; width: number; height: number }) {
+      const div = document.createElement('div')
+      div.getBoundingClientRect = () => ({
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        right: rect.left + rect.width,
+        bottom: rect.top + rect.height,
+        x: rect.left,
+        y: rect.top,
+        toJSON: () => {},
+      })
+      return { current: div } as React.RefObject<HTMLDivElement>
+    }
+
+    it('calls onZoneOverride when dropped inside a valid zone', () => {
+      const onZoneOverride = vi.fn()
+      const canvasRef = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 600 })
+
+      render(
+        <AgentAvatar agent={mockAgent} canvasRef={canvasRef} onZoneOverride={onZoneOverride} />
+      )
+
+      // dev-zone spans x: 5-55, y: 5-45 (from office-layout.ts)
+      // Simulate a drop at 30% x, 25% y → point at (300, 150) on a 1000x600 canvas
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 300, y: 150 } })
+      })
+
+      expect(onZoneOverride).toHaveBeenCalledWith(
+        'rx-architect',
+        expect.objectContaining({ zoneId: expect.any(String) })
+      )
+    })
+
+    it('does not call onZoneOverride when dropped outside all zones', () => {
+      const onZoneOverride = vi.fn()
+      const canvasRef = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 600 })
+
+      render(
+        <AgentAvatar agent={mockAgent} canvasRef={canvasRef} onZoneOverride={onZoneOverride} />
+      )
+
+      // Drop at 50% x, 50% y — check if it falls outside zones; use far corner 99%, 99%
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 990, y: 594 } })
+      })
+
+      expect(onZoneOverride).not.toHaveBeenCalled()
+    })
+
+    it('shows shake when dropped outside all zones (clears after 500ms)', () => {
+      vi.useFakeTimers()
+      const canvasRef = makeCanvasRef({ left: 0, top: 0, width: 1000, height: 600 })
+
+      render(<AgentAvatar agent={mockAgent} canvasRef={canvasRef} />)
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 990, y: 594 } })
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(500)
+      })
+      // No throw = shake timer cleared cleanly
+    })
+
+    it('does not call onZoneOverride when canvasRef.current is null', () => {
+      const onZoneOverride = vi.fn()
+      const canvasRef = { current: null } as unknown as React.RefObject<HTMLDivElement>
+
+      render(
+        <AgentAvatar agent={mockAgent} canvasRef={canvasRef} onZoneOverride={onZoneOverride} />
+      )
+
+      act(() => {
+        capturedOnDragEnd?.(null, { point: { x: 300, y: 150 } })
+      })
+
+      expect(onZoneOverride).not.toHaveBeenCalled()
     })
   })
 
