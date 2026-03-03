@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { OfficeCanvas } from './OfficeCanvas'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { ThemeProvider } from '../contexts/ThemeContext'
+import { toRgb } from '../test/colors'
 
 describe('OfficeCanvas', () => {
   it('renderiza todas as zonas', () => {
@@ -46,7 +47,7 @@ describe('OfficeCanvas', () => {
     render(
       <OfficeCanvas connectionStatus="connected">
         <div data-testid="avatar">Agent Avatar</div>
-      </OfficeCanvas>,
+      </OfficeCanvas>
     )
     expect(screen.getByTestId('avatar')).toBeTruthy()
   })
@@ -56,7 +57,7 @@ describe('OfficeCanvas', () => {
     render(
       <ThemeProvider isHackerMode={false}>
         <OfficeCanvas connectionStatus="connected" onToggleHackerMode={onToggle} />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
     fireEvent.click(screen.getByLabelText('ativar hacker mode'))
     expect(onToggle).toHaveBeenCalledOnce()
@@ -66,9 +67,9 @@ describe('OfficeCanvas', () => {
     const { container } = render(
       <ThemeProvider isHackerMode={true}>
         <OfficeCanvas connectionStatus="connected" />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
     const canvas = container.firstChild as HTMLElement
-    expect(canvas.style.background).toBe('rgb(0, 0, 0)')
+    expect(toRgb(canvas.style.background)).toBe('rgb(0, 0, 0)')
   })
 })

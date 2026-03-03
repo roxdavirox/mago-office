@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import type { UserConfig } from 'vitest/config'
 
 const testConfig: UserConfig['test'] = {
-  environment: 'jsdom',
+  environment: 'happy-dom',
   globals: true,
 }
 
