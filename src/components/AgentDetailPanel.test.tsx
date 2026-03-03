@@ -187,16 +187,25 @@ describe('AgentDetailPanel', () => {
     await waitFor(() => expect(screen.getByText('Failed to send. Please try again.')).toBeTruthy())
   })
 
-  it('clicking a quick message sends it', async () => {
+  it('clicking a quick message sends it and renders the message in history', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ response: 'ok' }),
+      json: async () => ({ response: 'Working on feature X' }),
     })
     vi.stubGlobal('fetch', fetchMock)
 
     render(<AgentDetailPanel agent={mockAgent} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: 'What is your current task?' }))
 
+    // fetch was called once
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
+
+    // quick message text appears in the history (button + chat bubble = more than 1)
+    await waitFor(() =>
+      expect(screen.getAllByText('What is your current task?').length).toBeGreaterThan(1)
+    )
+
+    // agent response also appears in history
+    await waitFor(() => expect(screen.getByText('Working on feature X')).toBeTruthy())
   })
 })
