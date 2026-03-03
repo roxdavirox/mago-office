@@ -4,6 +4,25 @@ import { OfficeCanvas } from './OfficeCanvas'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { ThemeProvider } from '../contexts/ThemeContext'
 
+/** Normaliza cor CSS para rgb() — happy-dom retorna hex, jsdom retorna rgb */
+function toRgb(color: string): string {
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '')
+    const full =
+      hex.length === 3
+        ? hex
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : hex
+    const r = parseInt(full.slice(0, 2), 16)
+    const g = parseInt(full.slice(2, 4), 16)
+    const b = parseInt(full.slice(4, 6), 16)
+    return `rgb(${r}, ${g}, ${b})`
+  }
+  return color
+}
+
 describe('OfficeCanvas', () => {
   it('renderiza todas as zonas', () => {
     render(<OfficeCanvas connectionStatus="connected" />)
@@ -46,7 +65,7 @@ describe('OfficeCanvas', () => {
     render(
       <OfficeCanvas connectionStatus="connected">
         <div data-testid="avatar">Agent Avatar</div>
-      </OfficeCanvas>,
+      </OfficeCanvas>
     )
     expect(screen.getByTestId('avatar')).toBeTruthy()
   })
@@ -56,7 +75,7 @@ describe('OfficeCanvas', () => {
     render(
       <ThemeProvider isHackerMode={false}>
         <OfficeCanvas connectionStatus="connected" onToggleHackerMode={onToggle} />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
     fireEvent.click(screen.getByLabelText('ativar hacker mode'))
     expect(onToggle).toHaveBeenCalledOnce()
@@ -66,9 +85,9 @@ describe('OfficeCanvas', () => {
     const { container } = render(
       <ThemeProvider isHackerMode={true}>
         <OfficeCanvas connectionStatus="connected" />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
     const canvas = container.firstChild as HTMLElement
-    expect(canvas.style.background).toBe('rgb(0, 0, 0)')
+    expect(toRgb(canvas.style.background)).toBe('rgb(0, 0, 0)')
   })
 })
