@@ -2,9 +2,7 @@ import { useRef, useState, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useSocket } from './hooks/useSocket'
 import { useOfficeState } from './hooks/useOfficeState'
-import { useHackerMode } from './hooks/useHackerMode'
 import type { AgentOfficeData } from './hooks/useOfficeState'
-import { ThemeProvider } from './contexts/ThemeContext'
 import { OfficeCanvas } from './components/OfficeCanvas'
 import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
@@ -15,16 +13,15 @@ import { getSocket } from './services/socket'
 export function App() {
   const { status } = useSocket()
   const { agents, users } = useOfficeState()
-  const { isHackerMode, toggle: toggleHackerMode } = useHackerMode()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const mySocketId = getSocket().id ?? null
 
-  const selectedAgent = agents.find(a => a.id === selectedAgentId) ?? null
+  const selectedAgent = agents.find((a) => a.id === selectedAgentId) ?? null
 
   const handleAgentClick = useCallback((agent: AgentOfficeData) => {
-    setSelectedAgentId(prev => (prev === agent.id ? null : agent.id))
+    setSelectedAgentId((prev) => (prev === agent.id ? null : agent.id))
   }, [])
 
   const handleClosePanel = useCallback(() => {
@@ -32,15 +29,14 @@ export function App() {
   }, [])
 
   return (
-    <ThemeProvider isHackerMode={isHackerMode}>
+    <>
       <OfficeCanvas
         connectionStatus={status}
-        agentCount={agents.filter(a => a.status !== 'offline').length}
+        agentCount={agents.filter((a) => a.status !== 'offline').length}
         humanCount={users.length}
         canvasRef={canvasRef}
-        onToggleHackerMode={toggleHackerMode}
       >
-        {agents.map(agent => (
+        {agents.map((agent) => (
           <AgentAvatar
             key={agent.id}
             agent={agent}
@@ -48,7 +44,7 @@ export function App() {
             isSelected={agent.id === selectedAgentId}
           />
         ))}
-        {users.map(user => (
+        {users.map((user) => (
           <HumanAvatar
             key={user.socketId}
             user={user}
@@ -69,22 +65,6 @@ export function App() {
           />
         )}
       </AnimatePresence>
-
-      <div
-        style={{
-          position: 'fixed',
-          top: 16,
-          left: 16,
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 10,
-          color: isHackerMode ? '#00ff41' : '#374151',
-          pointerEvents: 'none',
-          userSelect: 'none',
-          transition: 'color 0.4s ease',
-        }}
-      >
-        {isHackerMode ? '> HACKER MODE ACTIVE' : 'v0.5 — interactions'}
-      </div>
-    </ThemeProvider>
+    </>
   )
 }

@@ -1,14 +1,12 @@
 import { memo } from 'react'
 import type { Zone } from '../data/office-layout'
-import { useTheme } from '../contexts/ThemeContext'
+import { COLORS } from '../constants/theme'
 
 interface OfficeRoomProps {
   zone: Zone
 }
 
 export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
-  const theme = useTheme()
-
   return (
     <div
       data-zone-id={zone.id}
@@ -18,12 +16,10 @@ export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
         top: `${zone.y}%`,
         width: `${zone.width}%`,
         height: `${zone.height}%`,
-        background: theme.isHackerMode ? theme.zoneBg : zone.color,
-        border: `1px solid ${theme.zoneBorder}`,
+        background: zone.color,
+        border: `1px solid ${COLORS.zoneBorder}`,
         borderRadius: 8,
         overflow: 'hidden',
-        transition: 'background 0.4s ease, border-color 0.4s ease',
-        boxShadow: theme.isHackerMode ? `0 0 8px ${theme.zoneBorder}44` : 'none',
       }}
     >
       {/* Header da zona */}
@@ -33,7 +29,7 @@ export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
           alignItems: 'center',
           gap: 6,
           padding: '6px 10px',
-          borderBottom: `1px solid ${theme.zoneBorder}50`,
+          borderBottom: `1px solid ${COLORS.zoneBorder}50`,
         }}
       >
         <span style={{ fontSize: 12 }}>{zone.icon}</span>
@@ -41,10 +37,9 @@ export const OfficeRoom = memo(function OfficeRoom({ zone }: OfficeRoomProps) {
           style={{
             fontSize: 10,
             fontFamily: 'JetBrains Mono, monospace',
-            color: theme.label,
+            color: COLORS.label,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
-            transition: 'color 0.4s ease',
           }}
         >
           {zone.label}
