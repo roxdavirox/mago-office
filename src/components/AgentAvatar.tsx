@@ -53,6 +53,26 @@ const STATUS_BADGE_COLOR: Record<string, string> = {
 
 const TOOLTIP_DELAY_MS = 400
 
+const STYLES = {
+  nameLabel: {
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: 9,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+  } as React.CSSProperties,
+
+  badge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    border: '1.5px solid #0d1117',
+  } as React.CSSProperties,
+}
+
 export const AgentAvatar = memo(function AgentAvatar({
   agent,
   onClick,
@@ -160,30 +180,15 @@ export const AgentAvatar = memo(function AgentAvatar({
         <span
           aria-label={`status: ${agent.status}`}
           style={{
-            position: 'absolute',
-            bottom: -1,
-            right: -1,
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
+            ...STYLES.badge,
             background: badgeColor,
-            border: '1.5px solid #0d1117',
             boxShadow: isOffline ? 'none' : `0 0 4px ${badgeColor}`,
           }}
         />
       </motion.div>
 
       {/* Agent name */}
-      <span
-        style={{
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 9,
-          color: isOffline ? '#374151' : '#6b7280',
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <span style={{ ...STYLES.nameLabel, color: isOffline ? '#374151' : '#6b7280' }}>
         {agent.name}
       </span>
     </motion.div>

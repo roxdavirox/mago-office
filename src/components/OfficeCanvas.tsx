@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode, type RefObject } from 'react'
+import { type ReactNode, type RefObject } from 'react'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { OfficeRoom } from './OfficeRoom'
 import { OfficeHUD } from './OfficeHUD'
@@ -14,6 +14,26 @@ interface OfficeCanvasProps {
   canvasRef?: RefObject<HTMLDivElement | null>
 }
 
+const STYLES = {
+  canvas: {
+    position: 'relative',
+    width: '100%',
+    height: '100vh',
+    background: COLORS.bg,
+    overflow: 'hidden',
+    fontFamily: 'JetBrains Mono, monospace',
+  } as React.CSSProperties,
+
+  grid: {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: `radial-gradient(circle, ${COLORS.grid} 1px, transparent 1px)`,
+    backgroundSize: '28px 28px',
+    opacity: 0.4,
+    pointerEvents: 'none',
+  } as React.CSSProperties,
+}
+
 export function OfficeCanvas({
   children,
   connectionStatus,
@@ -21,32 +41,10 @@ export function OfficeCanvas({
   humanCount = 0,
   canvasRef,
 }: OfficeCanvasProps) {
-  const gridStyle = useMemo<React.CSSProperties>(
-    () => ({
-      position: 'absolute',
-      inset: 0,
-      backgroundImage: `radial-gradient(circle, ${COLORS.grid} 1px, transparent 1px)`,
-      backgroundSize: '28px 28px',
-      opacity: 0.4,
-      pointerEvents: 'none',
-    }),
-    []
-  )
-
   return (
-    <div
-      ref={canvasRef}
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100vh',
-        background: COLORS.bg,
-        overflow: 'hidden',
-        fontFamily: 'JetBrains Mono, monospace',
-      }}
-    >
+    <div ref={canvasRef} style={STYLES.canvas}>
       {/* Decorative grid */}
-      <div style={gridStyle} />
+      <div style={STYLES.grid} />
 
       {/* Office zones */}
       {OFFICE_ZONES.map((zone) => (

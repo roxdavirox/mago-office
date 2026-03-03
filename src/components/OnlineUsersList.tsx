@@ -14,6 +14,46 @@ const ITEM_VARIANTS = {
   exit: { opacity: 0, x: -12, transition: { duration: 0.15 } },
 }
 
+const STYLES = {
+  container: {
+    position: 'fixed',
+    top: 16,
+    right: 16,
+    padding: '8px 10px',
+    background: '#0d1117cc',
+    border: '1px solid #1f2937',
+    borderRadius: 6,
+    backdropFilter: 'blur(8px)',
+    fontFamily: 'JetBrains Mono, monospace',
+    minWidth: 130,
+    maxWidth: 160,
+    zIndex: 50,
+  } as React.CSSProperties,
+
+  header: {
+    fontSize: 9,
+    color: '#4b5563',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    borderBottom: '1px solid #1f2937',
+    paddingBottom: 4,
+  } as React.CSSProperties,
+
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    padding: '3px 0',
+  } as React.CSSProperties,
+
+  youBadge: {
+    opacity: 0.7,
+    marginLeft: 4,
+    fontSize: 8,
+  } as React.CSSProperties,
+}
+
 const UserRow = memo(function UserRow({ user, isMe }: { user: UserOfficeData; isMe: boolean }) {
   const color = user.userId ? hashColor(user.userId) : '#6b7280'
   const label = user.name ? initials(user.name) : '?'
@@ -25,12 +65,7 @@ const UserRow = memo(function UserRow({ user, isMe }: { user: UserOfficeData; is
       initial="hidden"
       animate="visible"
       exit="exit"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        padding: '3px 0',
-      }}
+      style={STYLES.row}
     >
       {/* Mini circular avatar */}
       <div
@@ -67,7 +102,7 @@ const UserRow = memo(function UserRow({ user, isMe }: { user: UserOfficeData; is
         title={user.name}
       >
         {user.name}
-        {isMe && <span style={{ color, opacity: 0.7, marginLeft: 4, fontSize: 8 }}>you</span>}
+        {isMe && <span style={{ ...STYLES.youBadge, color }}>you</span>}
       </span>
     </motion.div>
   )
@@ -80,38 +115,9 @@ export const OnlineUsersList = memo(function OnlineUsersList({
   if (users.length === 0) return null
 
   return (
-    <div
-      role="list"
-      aria-label="online users"
-      style={{
-        position: 'fixed',
-        top: 16,
-        right: 16,
-        padding: '8px 10px',
-        background: '#0d1117cc',
-        border: '1px solid #1f2937',
-        borderRadius: 6,
-        backdropFilter: 'blur(8px)',
-        fontFamily: 'JetBrains Mono, monospace',
-        minWidth: 130,
-        maxWidth: 160,
-        zIndex: 50,
-      }}
-    >
+    <div role="list" aria-label="online users" style={STYLES.container}>
       {/* Header */}
-      <div
-        style={{
-          fontSize: 9,
-          color: '#4b5563',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          marginBottom: 6,
-          borderBottom: '1px solid #1f2937',
-          paddingBottom: 4,
-        }}
-      >
-        online · {users.length}
-      </div>
+      <div style={STYLES.header}>online · {users.length}</div>
 
       {/* List with AnimatePresence for join/leave animations */}
       <AnimatePresence initial={false}>

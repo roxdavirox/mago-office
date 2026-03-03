@@ -14,6 +14,33 @@ interface HumanAvatarProps {
 
 const EMIT_DEBOUNCE_MS = 100
 
+const STYLES = {
+  nameStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 1,
+  } as React.CSSProperties,
+
+  youBadge: {
+    fontSize: 8,
+    fontFamily: 'JetBrains Mono, monospace',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  } as React.CSSProperties,
+
+  nameLabel: {
+    fontSize: 9,
+    fontFamily: 'JetBrains Mono, monospace',
+    color: '#6b7280',
+    letterSpacing: '0.04em',
+    whiteSpace: 'nowrap',
+    maxWidth: 64,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  } as React.CSSProperties,
+}
+
 export const HumanAvatar = memo(function HumanAvatar({ user, isMe, canvasRef }: HumanAvatarProps) {
   const color = hashColor(user.userId)
   const label = initials(user.name)
@@ -90,33 +117,9 @@ export const HumanAvatar = memo(function HumanAvatar({ user, isMe, canvasRef }: 
       </div>
 
       {/* YOU badge + name */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-        {isMe && (
-          <span
-            style={{
-              fontSize: 8,
-              fontFamily: 'JetBrains Mono, monospace',
-              color,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}
-          >
-            you
-          </span>
-        )}
-        <span
-          style={{
-            fontSize: 9,
-            fontFamily: 'JetBrains Mono, monospace',
-            color: '#6b7280',
-            letterSpacing: '0.04em',
-            whiteSpace: 'nowrap',
-            maxWidth: 64,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-          title={user.name}
-        >
+      <div style={STYLES.nameStack}>
+        {isMe && <span style={{ ...STYLES.youBadge, color }}>you</span>}
+        <span style={STYLES.nameLabel} title={user.name}>
           {user.name}
         </span>
       </div>

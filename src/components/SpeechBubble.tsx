@@ -8,6 +8,39 @@ interface SpeechBubbleProps {
 
 const MAX_LENGTH = 40
 
+const STYLES = {
+  bubble: {
+    position: 'absolute',
+    bottom: 'calc(100% + 8px)',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    maxWidth: 180,
+    padding: '5px 8px',
+    background: 'rgba(15, 23, 42, 0.92)',
+    borderRadius: 6,
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: 10,
+    color: '#c9d1d9',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    lineHeight: 1.4,
+    pointerEvents: 'none',
+    zIndex: 10,
+    backdropFilter: 'blur(4px)',
+  } as React.CSSProperties,
+
+  arrow: {
+    position: 'absolute',
+    bottom: -5,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 0,
+    height: 0,
+    borderLeft: '5px solid transparent',
+    borderRight: '5px solid transparent',
+  } as React.CSSProperties,
+}
+
 const variants = {
   hidden: { scale: 0, opacity: 0, y: 8 },
   visible: {
@@ -31,42 +64,13 @@ export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBu
           initial="hidden"
           animate="visible"
           exit="exit"
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 8px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            maxWidth: 180,
-            padding: '5px 8px',
-            background: 'rgba(15, 23, 42, 0.92)',
-            border: `1px solid ${color}80`,
-            borderRadius: 6,
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 10,
-            color: '#c9d1d9',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            lineHeight: 1.4,
-            pointerEvents: 'none',
-            zIndex: 10,
-            backdropFilter: 'blur(4px)',
-          }}
+          style={{ ...STYLES.bubble, border: `1px solid ${color}80` }}
         >
           {truncated}
           {/* Downward-pointing arrow */}
           <span
             data-testid="speech-arrow"
-            style={{
-              position: 'absolute',
-              bottom: -5,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '5px solid transparent',
-              borderRight: '5px solid transparent',
-              borderTop: `5px solid ${color}80`,
-            }}
+            style={{ ...STYLES.arrow, borderTop: `5px solid ${color}80` }}
           />
         </motion.div>
       )}
