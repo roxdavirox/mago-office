@@ -9,6 +9,7 @@ vi.mock('framer-motion', async () => {
   const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion')
   return {
     ...actual,
+    useMotionValue: () => ({ set: vi.fn(), get: vi.fn() }),
     motion: {
       div: ({
         children,
@@ -20,6 +21,13 @@ vi.mock('framer-motion', async () => {
         initial: _i,
         exit: _e,
         layout: _l,
+        drag: _drag,
+        dragConstraints: _dc,
+        dragElastic: _de,
+        dragMomentum: _dm,
+        onDragEnd: _ode,
+        x: _x,
+        y: _y,
         ...rest
       }: MotionDivProps) => <div {...rest}>{children}</div>,
     },
@@ -38,6 +46,7 @@ const mockAgent: AgentOfficeData = {
   position: { x: 30, y: 50 },
   color: '#8b5cf6',
   speechText: null,
+  isManualOverride: false,
 }
 
 describe('AgentAvatar', () => {
@@ -93,6 +102,40 @@ describe('AgentAvatar', () => {
   it('has aria-label with agent name and status', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(document.querySelector('[aria-label*="Architect"]')).toBeTruthy()
+  })
+
+  describe('manual override', () => {
+    it('shows anchor badge when isManualOverride is true', () => {
+      render(<AgentAvatar agent={{ ...mockAgent, isManualOverride: true }} />)
+      expect(document.querySelector('[aria-label="manual override"]')).toBeTruthy()
+    })
+
+    it('hides anchor badge when isManualOverride is false', () => {
+      render(<AgentAvatar agent={mockAgent} />)
+      expect(document.querySelector('[aria-label="manual override"]')).toBeNull()
+    })
+
+    it('shows reset button when isManualOverride is true', () => {
+      const onClear = vi.fn()
+      render(
+        <AgentAvatar agent={{ ...mockAgent, isManualOverride: true }} onClearOverride={onClear} />
+      )
+      expect(screen.getByRole('button', { name: /reset position/i })).toBeTruthy()
+    })
+
+    it('hides reset button when isManualOverride is false', () => {
+      render(<AgentAvatar agent={mockAgent} />)
+      expect(screen.queryByRole('button', { name: /reset position/i })).toBeNull()
+    })
+
+    it('calls onClearOverride when reset button is clicked', () => {
+      const onClear = vi.fn()
+      render(
+        <AgentAvatar agent={{ ...mockAgent, isManualOverride: true }} onClearOverride={onClear} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: /reset position/i }))
+      expect(onClear).toHaveBeenCalledWith('rx-architect')
+    })
   })
 
   describe('tooltip with fake timers', () => {

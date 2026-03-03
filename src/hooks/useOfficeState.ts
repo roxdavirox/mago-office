@@ -35,6 +35,8 @@ export interface AgentOfficeData {
   color: string
   /** Current SpeechBubble text (null = hidden) */
   speechText: string | null
+  /** True when position was manually overridden by drag (visual only) */
+  isManualOverride: boolean
 }
 
 export interface UserOfficeData {
@@ -45,11 +47,22 @@ export interface UserOfficeData {
   y: number
 }
 
+/** A manual zone override for a single agent */
+export interface ZoneOverride {
+  /** Canvas-relative X position in % */
+  x: number
+  /** Canvas-relative Y position in % */
+  y: number
+  zoneId: string
+}
+
 export interface OfficeState {
   agents: AgentOfficeData[]
   users: UserOfficeData[]
   isLoading: boolean
   error: string | null
+  /** Manual position overrides by agentId — cleared on next agent:status:updated */
+  overrides: Record<string, ZoneOverride>
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -78,6 +91,7 @@ function enrichAgent(raw: RawAgent): AgentOfficeData {
     position,
     color: getAgentColor(raw.id),
     speechText: null,
+    isManualOverride: false,
   }
 }
 
@@ -88,6 +102,8 @@ type Action =
   | { type: 'AGENT_STATUS_UPDATED'; agentId: string; status: string; lastAction: string }
   | { type: 'AGENT_SPEECH'; agentId: string; text: string }
   | { type: 'AGENT_SPEECH_CLEAR'; agentId: string }
+  | { type: 'AGENT_ZONE_OVERRIDE'; agentId: string; override: ZoneOverride }
+  | { type: 'AGENT_ZONE_CLEAR_OVERRIDE'; agentId: string }
   | { type: 'USER_JOINED'; user: OfficeUser }
   | { type: 'USER_LEFT'; socketId: string }
   | { type: 'USER_MOVED'; socketId: string; x: number; y: number }
@@ -103,9 +119,14 @@ function reducer(state: OfficeState, action: Action): OfficeState {
         agents: action.agents.map(enrichAgent),
       }
 
-    case 'AGENT_STATUS_UPDATED':
+    case 'AGENT_STATUS_UPDATED': {
+      // Clear any manual override for this agent — backend has the real zone now
+      const overrides = { ...state.overrides }
+      delete overrides[action.agentId]
+
       return {
         ...state,
+        overrides,
         agents: state.agents.map((a) => {
           if (a.id !== action.agentId) return a
           const raw: RawAgent = {
@@ -121,6 +142,7 @@ function reducer(state: OfficeState, action: Action): OfficeState {
           return { ...enrichAgent(raw), speechText: a.speechText }
         }),
       }
+    }
 
     case 'AGENT_SPEECH':
       return {
@@ -135,6 +157,18 @@ function reducer(state: OfficeState, action: Action): OfficeState {
         ...state,
         agents: state.agents.map((a) => (a.id === action.agentId ? { ...a, speechText: null } : a)),
       }
+
+    case 'AGENT_ZONE_OVERRIDE':
+      return {
+        ...state,
+        overrides: { ...state.overrides, [action.agentId]: action.override },
+      }
+
+    case 'AGENT_ZONE_CLEAR_OVERRIDE': {
+      const overrides = { ...state.overrides }
+      delete overrides[action.agentId]
+      return { ...state, overrides }
+    }
 
     case 'USER_JOINED':
       return {
@@ -169,6 +203,7 @@ const INITIAL_STATE: OfficeState = {
   users: [],
   isLoading: true,
   error: null,
+  overrides: {},
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
@@ -176,7 +211,14 @@ const INITIAL_STATE: OfficeState = {
 const BACKEND_URL = import.meta.env.VITE_MAGO_BACKEND_URL ?? 'http://localhost:3002'
 const AGENTS_URL = `${BACKEND_URL}/api/dashboard/agents`
 
-export function useOfficeState(): OfficeState {
+export interface UseOfficeStateReturn extends Omit<OfficeState, 'overrides'> {
+  /** Apply a manual position override for an agent (drag-and-drop) */
+  setZoneOverride: (agentId: string, override: ZoneOverride) => void
+  /** Remove a manual override, restoring the auto-computed position */
+  clearZoneOverride: (agentId: string) => void
+}
+
+export function useOfficeState(): UseOfficeStateReturn {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   // Keep refs of speech bubble timers per agent for cleanup
@@ -190,6 +232,14 @@ export function useOfficeState(): OfficeState {
       speechTimers.current.delete(agentId)
     }, 5000)
     speechTimers.current.set(agentId, timer)
+  }, [])
+
+  const setZoneOverride = useCallback((agentId: string, override: ZoneOverride) => {
+    dispatch({ type: 'AGENT_ZONE_OVERRIDE', agentId, override })
+  }, [])
+
+  const clearZoneOverride = useCallback((agentId: string) => {
+    dispatch({ type: 'AGENT_ZONE_CLEAR_OVERRIDE', agentId })
   }, [])
 
   // ── Initial load via REST ────────────────────────────────────────────────
@@ -274,5 +324,24 @@ export function useOfficeState(): OfficeState {
     }
   }, [])
 
-  return state
+  // Apply overrides to agent positions before returning
+  const agents = state.agents.map((a) => {
+    const ov = state.overrides[a.id]
+    if (!ov) return a
+    return {
+      ...a,
+      position: { x: ov.x, y: ov.y },
+      zoneId: ov.zoneId,
+      isManualOverride: true,
+    }
+  })
+
+  return {
+    agents,
+    users: state.users,
+    isLoading: state.isLoading,
+    error: state.error,
+    setZoneOverride,
+    clearZoneOverride,
+  }
 }
