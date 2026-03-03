@@ -345,6 +345,60 @@ describe('useOfficeState — zone override', () => {
   })
 })
 
+describe('useOfficeState — retry', () => {
+  it('retry re-triggers the fetch and clears the error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+
+    const { result } = renderHook(() => useOfficeState())
+    await waitFor(() => expect(result.current.error).toMatch(/503/))
+
+    // Switch mock to succeed on second call
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockAgents),
+      })
+    )
+
+    act(() => {
+      result.current.retry()
+    })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.error).toBeNull()
+    expect(result.current.agents).toHaveLength(3)
+  })
+
+  it('retry sets isLoading=true before fetch resolves', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+
+    const { result } = renderHook(() => useOfficeState())
+    await waitFor(() => expect(result.current.error).toMatch(/503/))
+
+    // Use a pending promise to freeze the fetch mid-flight
+    let resolveFetch!: (v: unknown) => void
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise((res) => {
+          resolveFetch = res
+        })
+      )
+    )
+
+    act(() => {
+      result.current.retry()
+    })
+
+    expect(result.current.isLoading).toBe(true)
+
+    // Resolve to avoid lingering promise
+    resolveFetch({ ok: true, json: () => Promise.resolve(mockAgents) })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+  })
+})
+
 describe('useOfficeState — cleanup', () => {
   it('removes socket listeners on unmount', async () => {
     const { result, unmount } = renderHook(() => useOfficeState())

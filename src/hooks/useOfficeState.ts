@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useCallback, useRef } from 'react'
+import { useEffect, useReducer, useCallback, useRef, useState } from 'react'
 import { getSocket } from '../services/socket'
 import type {
   AgentStatus as SocketAgentStatus,
@@ -98,6 +98,7 @@ function enrichAgent(raw: RawAgent): AgentOfficeData {
 // ─── Reducer ────────────────────────────────────────────────────────────────
 
 type Action =
+  | { type: 'FETCH_START' }
   | { type: 'AGENTS_LOADED'; agents: RawAgent[] }
   | { type: 'AGENT_STATUS_UPDATED'; agentId: string; status: string; lastAction: string }
   | { type: 'AGENT_SPEECH'; agentId: string; text: string }
@@ -111,6 +112,9 @@ type Action =
 
 function reducer(state: OfficeState, action: Action): OfficeState {
   switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, isLoading: true, error: null }
+
     case 'AGENTS_LOADED':
       return {
         ...state,
@@ -216,10 +220,13 @@ export interface UseOfficeStateReturn extends Omit<OfficeState, 'overrides'> {
   setZoneOverride: (agentId: string, override: ZoneOverride) => void
   /** Remove a manual override, restoring the auto-computed position */
   clearZoneOverride: (agentId: string) => void
+  /** Re-trigger the agents REST fetch (clears error and sets isLoading) */
+  retry: () => void
 }
 
 export function useOfficeState(): UseOfficeStateReturn {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [retryCount, setRetryCount] = useState(0)
 
   // Keep refs of speech bubble timers per agent for cleanup
   const speechTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -242,9 +249,15 @@ export function useOfficeState(): UseOfficeStateReturn {
     dispatch({ type: 'AGENT_ZONE_CLEAR_OVERRIDE', agentId })
   }, [])
 
+  const retry = useCallback(() => {
+    setRetryCount((c) => c + 1)
+  }, [])
+
   // ── Initial load via REST ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
+
+    dispatch({ type: 'FETCH_START' })
 
     fetch(AGENTS_URL)
       .then((res) => {
@@ -264,7 +277,7 @@ export function useOfficeState(): UseOfficeStateReturn {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [retryCount])
 
   // ── Socket events ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -343,5 +356,6 @@ export function useOfficeState(): UseOfficeStateReturn {
     error: state.error,
     setZoneOverride,
     clearZoneOverride,
+    retry,
   }
 }
