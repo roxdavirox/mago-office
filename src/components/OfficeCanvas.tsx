@@ -3,7 +3,7 @@ import { OFFICE_ZONES } from '../data/office-layout'
 import { OfficeRoom } from './OfficeRoom'
 import { OfficeHUD } from './OfficeHUD'
 import type { ConnectionStatus } from '../hooks/useSocket'
-import { useTheme } from '../contexts/ThemeContext'
+import { COLORS } from '../constants/theme'
 
 interface OfficeCanvasProps {
   children?: ReactNode
@@ -12,7 +12,6 @@ interface OfficeCanvasProps {
   humanCount?: number
   /** Ref para o elemento raiz — usado como dragConstraints pelo HumanAvatar */
   canvasRef?: RefObject<HTMLDivElement | null>
-  onToggleHackerMode?: () => void
 }
 
 export function OfficeCanvas({
@@ -21,21 +20,18 @@ export function OfficeCanvas({
   agentCount = 0,
   humanCount = 0,
   canvasRef,
-  onToggleHackerMode,
 }: OfficeCanvasProps) {
-  const theme = useTheme()
-
-  const gridStyle = useMemo<React.CSSProperties>(() => ({
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: theme.isHackerMode
-      ? `repeating-linear-gradient(0deg, ${theme.grid}0d 0px, transparent 1px, transparent 27px, ${theme.grid}0d 28px),
-         repeating-linear-gradient(90deg, ${theme.grid}0d 0px, transparent 1px, transparent 27px, ${theme.grid}0d 28px)`
-      : `radial-gradient(circle, #1f2937 1px, transparent 1px)`,
-    backgroundSize: '28px 28px',
-    opacity: theme.isHackerMode ? 1 : 0.4,
-    pointerEvents: 'none',
-  }), [theme.isHackerMode, theme.grid])
+  const gridStyle = useMemo<React.CSSProperties>(
+    () => ({
+      position: 'absolute',
+      inset: 0,
+      backgroundImage: `radial-gradient(circle, ${COLORS.grid} 1px, transparent 1px)`,
+      backgroundSize: '28px 28px',
+      opacity: 0.4,
+      pointerEvents: 'none',
+    }),
+    []
+  )
 
   return (
     <div
@@ -44,17 +40,16 @@ export function OfficeCanvas({
         position: 'relative',
         width: '100%',
         height: '100vh',
-        background: theme.bg,
+        background: COLORS.bg,
         overflow: 'hidden',
         fontFamily: 'JetBrains Mono, monospace',
-        transition: 'background 0.4s ease',
       }}
     >
       {/* Grid decorativo */}
       <div style={gridStyle} />
 
       {/* Zonas do escritório */}
-      {OFFICE_ZONES.map(zone => (
+      {OFFICE_ZONES.map((zone) => (
         <OfficeRoom key={zone.id} zone={zone} />
       ))}
 
@@ -66,7 +61,6 @@ export function OfficeCanvas({
         connectionStatus={connectionStatus}
         agentCount={agentCount}
         humanCount={humanCount}
-        onToggleHackerMode={onToggleHackerMode}
       />
     </div>
   )

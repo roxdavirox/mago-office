@@ -1,22 +1,19 @@
 import { memo } from 'react'
 import type { ConnectionStatus } from '../hooks/useSocket'
 import { STATUS_COLOR, STATUS_LABEL } from '../constants/status'
-import { useTheme } from '../contexts/ThemeContext'
+import { COLORS } from '../constants/theme'
 
 interface OfficeHUDProps {
   connectionStatus: ConnectionStatus
   agentCount?: number
   humanCount?: number
-  onToggleHackerMode?: () => void
 }
 
 export const OfficeHUD = memo(function OfficeHUD({
   connectionStatus,
   agentCount = 0,
   humanCount = 0,
-  onToggleHackerMode,
 }: OfficeHUDProps) {
-  const theme = useTheme()
   const color = STATUS_COLOR[connectionStatus]
   const label = STATUS_LABEL[connectionStatus]
 
@@ -30,15 +27,13 @@ export const OfficeHUD = memo(function OfficeHUD({
         alignItems: 'center',
         gap: 12,
         padding: '6px 12px',
-        background: theme.isHackerMode ? '#000000cc' : '#0d1117cc',
-        border: `1px solid ${theme.hudBorder}`,
+        background: COLORS.hudBg,
+        border: `1px solid ${COLORS.zoneBorder}`,
         borderRadius: 6,
         backdropFilter: 'blur(8px)',
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: 11,
-        color: theme.label,
-        transition: 'border-color 0.4s ease, color 0.4s ease',
-        boxShadow: theme.isHackerMode ? `0 0 8px ${theme.hudBorder}44` : 'none',
+        color: COLORS.label,
       }}
     >
       {/* Status conexão */}
@@ -50,46 +45,26 @@ export const OfficeHUD = memo(function OfficeHUD({
             width: 6,
             height: 6,
             borderRadius: '50%',
-            background: theme.isHackerMode ? theme.label : color,
-            boxShadow: `0 0 4px ${theme.isHackerMode ? theme.label : color}`,
+            background: color,
+            boxShadow: `0 0 4px ${color}`,
           }}
         />
-        <span style={{ color: theme.isHackerMode ? theme.label : color }}>{label}</span>
+        <span style={{ color }}>{label}</span>
       </div>
 
-      <span style={{ color: theme.isHackerMode ? `${theme.label}50` : '#374151' }}>│</span>
+      <span style={{ color: COLORS.separator }}>│</span>
 
       {/* Agentes online */}
-      <span>{agentCount} agent{agentCount !== 1 ? 's' : ''}</span>
+      <span>
+        {agentCount} agent{agentCount !== 1 ? 's' : ''}
+      </span>
 
       {humanCount > 0 && (
         <>
-          <span style={{ color: theme.isHackerMode ? `${theme.label}50` : '#374151' }}>│</span>
-          <span>{humanCount} human{humanCount !== 1 ? 's' : ''}</span>
-        </>
-      )}
-
-      {/* Botão Hacker Mode */}
-      {onToggleHackerMode && (
-        <>
-          <span style={{ color: theme.isHackerMode ? `${theme.label}50` : '#374151' }}>│</span>
-          <button
-            onClick={onToggleHackerMode}
-            aria-label={theme.isHackerMode ? 'desativar hacker mode' : 'ativar hacker mode'}
-            title="Ctrl+Shift+H"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: theme.isHackerMode ? theme.label : '#4b5563',
-              cursor: 'pointer',
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 9,
-              padding: 0,
-              letterSpacing: '0.05em',
-            }}
-          >
-            {theme.isHackerMode ? '[H]' : 'H'}
-          </button>
+          <span style={{ color: COLORS.separator }}>│</span>
+          <span>
+            {humanCount} human{humanCount !== 1 ? 's' : ''}
+          </span>
         </>
       )}
     </div>

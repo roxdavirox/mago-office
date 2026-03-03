@@ -1,35 +1,12 @@
-export interface Theme {
-  isHackerMode: boolean
-  /** Fundo principal */
-  bg: string
-  /** Cor de grade/decoração */
-  grid: string
-  /** Cor de borda de zonas */
-  zoneBorder: string
-  /** Fundo de zona */
-  zoneBg: string
-  /** Cor primária de labels/texto */
-  label: string
-  /** Cor do HUD */
-  hudBorder: string
-}
-
-export const DEFAULT_THEME: Theme = {
-  isHackerMode: false,
+/** Paleta de cores estática do mago-office */
+export const COLORS = {
   bg: '#0d1117',
   grid: '#1f2937',
   zoneBorder: '#1f2937',
   zoneBg: '#111827',
   label: '#6b7280',
-  hudBorder: '#1f2937',
-}
-
-export const HACKER_THEME: Theme = {
-  isHackerMode: true,
-  bg: '#000000',
-  grid: '#00ff41',
-  zoneBorder: '#00ff41',
-  zoneBg: '#001100',
-  label: '#00ff41',
-  hudBorder: '#00ff41',
-}
+  labelBright: '#d1d5db',
+  labelMuted: '#4b5563',
+  hudBg: '#0d1117cc',
+  separator: '#374151',
+} as const
