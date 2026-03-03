@@ -3,25 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { OfficeCanvas } from './OfficeCanvas'
 import { OFFICE_ZONES } from '../data/office-layout'
 import { ThemeProvider } from '../contexts/ThemeContext'
-
-/** Normaliza cor CSS para rgb() — happy-dom retorna hex, jsdom retorna rgb */
-function toRgb(color: string): string {
-  if (color.startsWith('#')) {
-    const hex = color.replace('#', '')
-    const full =
-      hex.length === 3
-        ? hex
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : hex
-    const r = parseInt(full.slice(0, 2), 16)
-    const g = parseInt(full.slice(2, 4), 16)
-    const b = parseInt(full.slice(4, 6), 16)
-    return `rgb(${r}, ${g}, ${b})`
-  }
-  return color
-}
+import { toRgb } from '../test/colors'
 
 describe('OfficeCanvas', () => {
   it('renderiza todas as zonas', () => {
