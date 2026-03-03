@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/mago-estimate.sh — Estimativa de issue via OpenCode
+# scripts/mago-estimate.sh — Estimativa de issue via rx-architect (Celebro) com fallback OpenCode
 #
 # Uso: ./scripts/mago-estimate.sh <ISSUE_NUMBER> [--board] [--comment]
 #   --board:   Atualiza campo Size no GitHub Projects board
@@ -24,101 +24,157 @@ if [ -z "$ISSUE_NUMBER" ]; then
   exit 1
 fi
 
+CELEBRO_URL="${CELEBRO_URL:-http://localhost:3099/chat}"
 MODEL="${OPENCODE_MODEL:-opencode/minimax-m2.5-free}"
 OPENCODE="${OPENCODE_BIN:-/home/rx/.opencode/bin/opencode}"
 PROJECT_ID="PVT_kwHOAPDgbs4BQglq"
 SIZE_FIELD_ID="PVTSSF_lAHOAPDgbs4BQglqzg-nNnU"
 SIZE_IDS='{"XS":"c4ee0f78","S":"8a34ec7b","M":"fbe25f78","L":"c15fe1d4","XL":"dcefc6fd"}'
 
-if [ ! -f "$OPENCODE" ]; then
-  echo "Erro: opencode não encontrado em $OPENCODE"
-  exit 1
-fi
-
 # Buscar dados da issue
 ISSUE=$(gh issue view "$ISSUE_NUMBER" --json title,body,labels)
 TITLE=$(echo "$ISSUE" | python3 -c "import sys,json; print(json.load(sys.stdin)['title'])")
-BODY=$(echo "$ISSUE"  | python3 -c "import sys,json; print((json.load(sys.stdin)['body'] or '')[:1500])")
+BODY=$(echo "$ISSUE"  | python3 -c "import sys,json; print(json.load(sys.stdin)['body'] or '')" | head -c 1000)
 LABELS=$(echo "$ISSUE" | python3 -c "import sys,json; print(', '.join(l['name'] for l in json.load(sys.stdin)['labels']))")
 
-echo "📐 Estimando issue #$ISSUE_NUMBER..."
+echo "🏗️  Consultando rx-architect para issue #$ISSUE_NUMBER..."
 echo "   $TITLE"
 echo ""
 
-PROMPT="Estime o esforço desta issue do projeto mago-office (React 19 + Vite + TypeScript + Framer Motion — escritório virtual 2D).
+PROMPT="Você é rx-architect do MAGO. Estime esforço e planeje implementação desta issue do projeto mago-office (app React 19 + Vite 6 + TypeScript strict + Framer Motion + socket.io-client — escritório virtual 2D com avatares de agentes IA).
 
-Issue #$ISSUE_NUMBER: $TITLE
+**Issue #$ISSUE_NUMBER: $TITLE**
 Labels: $LABELS
 
 $BODY
 
-Responda SOMENTE em JSON válido, sem texto fora:
+Responda EXATAMENTE neste JSON (sem texto fora do JSON):
 {
-  \"size\": \"XS|S|M|L|XL\",
-  \"minutes\": <número inteiro>,
-  \"steps\": [\"passo 1\", \"passo 2\"],
-  \"risks\": [\"risco se houver\"],
-  \"split\": [\"sub-issue se L ou XL\"]
+  \"size\": \"XS\" | \"S\" | \"M\" | \"L\" | \"XL\",
+  \"hours\": \"<estimativa ex: 1-2h>\",
+  \"steps\": [
+    {\"order\": 1, \"title\": \"<titulo>\", \"detail\": \"<detalhe tecnico>\"},
+    ...
+  ],
+  \"risks\": [\"<risco se houver>\"],
+  \"dependencies\": [\"<dep se houver>\"]
 }
 
-Critérios (issues devem caber em até 30 min):
-- XS: <10min — 1 arquivo, mudança trivial
-- S:  ~15min — 1-2 arquivos, adição pequena
-- M:  ~30min — 2-4 arquivos, feature completa pequena (máximo aceitável)
-- L:  >30min — QUEBRAR antes. Liste sub-issues em \"split\"
-- XL: nunca aceitar — sempre quebrar"
+Critérios de size:
+- XS: 1-2h trivial
+- S: meio dia pequeno
+- M: 1 dia médio
+- L: 2-3 dias grande
+- XL: semana+ (sugerir quebrar)"
 
-TMPFILE=$(mktemp)
-printf '%s' "$PROMPT" > "$TMPFILE"
+# ── Tentar Celebro primeiro ────────────────────────────────────────────────────
+PLAN=""
+BACKEND=""
 
-RAW=$(timeout 60 "$OPENCODE" run -m "$MODEL" "$(cat "$TMPFILE")" 2>&1 \
-  | sed 's/\x1b\[[0-9;]*[A-Za-z]//g')
-rm -f "$TMPFILE"
+if curl -s --connect-timeout 2 "$CELEBRO_URL" > /dev/null 2>&1; then
+  echo "   via rx-architect (Celebro)..."
+  TMPFILE=$(mktemp)
+  printf '%s' "$PROMPT" > "$TMPFILE"
+  PAYLOAD=$(python3 -c "
+import json, sys
+text = open(sys.argv[1]).read()
+print(json.dumps({'text': text, 'agent': 'rx-architect'}))
+" "$TMPFILE")
+  rm -f "$TMPFILE"
 
-PLAN=$(echo "$RAW" | python3 -c "
+  RESPONSE=$(curl -s --max-time 30 -X POST "$CELEBRO_URL" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response',''))" 2>/dev/null || echo "")
+
+  PLAN=$(echo "$RESPONSE" | python3 -c "
 import sys, json, re
 text = sys.stdin.read()
 match = re.search(r'\{[\s\S]*\}', text)
 if match:
     try:
         print(json.dumps(json.loads(match.group(0)), indent=2, ensure_ascii=False))
+    except:
+        pass
+" 2>/dev/null || echo "")
+  [[ -n "$PLAN" ]] && BACKEND="celebro"
+fi
+
+# ── Fallback para OpenCode se Celebro falhou ──────────────────────────────────
+if [[ -z "$PLAN" ]]; then
+  if [ ! -f "$OPENCODE" ]; then
+    echo "⚠️  Celebro indisponível e OpenCode não encontrado em $OPENCODE"
+    exit 0
+  fi
+  echo "   via OpenCode (fallback)..."
+  TMPFILE=$(mktemp)
+  printf '%s' "$PROMPT" > "$TMPFILE"
+  RAW=$(timeout 60 "$OPENCODE" run -m "$MODEL" "$(cat "$TMPFILE")" 2>&1 \
+    | sed 's/\x1b\[[0-9;]*[A-Za-z]//g')
+  rm -f "$TMPFILE"
+
+  # Normalizar JSON do OpenCode para formato Celebro (steps como objetos)
+  PLAN=$(echo "$RAW" | python3 -c "
+import sys, json, re
+text = sys.stdin.read()
+match = re.search(r'\{[\s\S]*\}', text)
+if match:
+    try:
+        d = json.loads(match.group(0))
+        steps = d.get('steps', [])
+        if steps and isinstance(steps[0], str):
+            d['steps'] = [{'order': i+1, 'title': s, 'detail': ''} for i, s in enumerate(steps)]
+        if 'minutes' in d and 'hours' not in d:
+            mins = d.get('minutes', 0)
+            d['hours'] = f'{mins}min' if mins < 60 else f'{mins//60}h'
+        if 'split' in d and 'dependencies' not in d:
+            d['dependencies'] = d.pop('split')
+        print(json.dumps(d, indent=2, ensure_ascii=False))
     except Exception:
         print(text)
-else:
-    print(text)
-")
+" 2>/dev/null || echo "")
+  [[ -n "$PLAN" ]] && BACKEND="opencode"
+fi
 
-SIZE=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('size','S').upper())" 2>/dev/null || echo "S")
-MINS=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('minutes','?'))" 2>/dev/null || echo "?")
+if [[ -z "$PLAN" ]]; then
+  echo "⚠️  Nenhum backend disponível — estimativa indisponível"
+  exit 0
+fi
+
+SIZE=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('size','M'))" 2>/dev/null || echo "M")
+HOURS=$(echo "$PLAN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('hours','?'))" 2>/dev/null || echo "?")
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Size: $SIZE (~${MINS}min)  [máx 30min]"
+echo "📐 Estimativa rx-architect"
+echo "   Size: $SIZE ($HOURS) [via $BACKEND]"
 echo ""
 echo "$PLAN" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
     for s in d.get('steps', []):
-        print(f'  • {s}')
+        if isinstance(s, dict):
+            print(f\"  {s.get('order','•')}. {s.get('title','')}\")
+            if s.get('detail'):
+                print(f\"     {s['detail']}\")
+            print()
+        else:
+            print(f'  • {s}')
     risks = d.get('risks', [])
     if risks:
-        print()
-        print('  Riscos:', ', '.join(risks))
-    split = d.get('split', [])
-    if split:
-        print()
-        print('  ⚠️  L/XL — quebrar em:')
-        for s in split:
-            print(f'    - {s}')
-except Exception:
+        print('  ⚠️  Riscos:', ', '.join(risks))
+    deps = d.get('dependencies', [])
+    if deps:
+        print('  🔗 Deps:', ', '.join(deps))
+except:
     print(sys.stdin.read())
 " 2>/dev/null || echo "$PLAN"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Atualizar campo Size no board
+# ── Atualizar campo Size no board ─────────────────────────────────────────────
 if [ -n "$UPDATE_BOARD" ]; then
   SIZE_OPTION=$(echo "$SIZE_IDS" | python3 -c \
-    "import sys,json; d=json.load(sys.stdin); print(d.get('$SIZE', d['S']))")
+    "import sys,json; d=json.load(sys.stdin); print(d.get('$SIZE', d['M']))")
   ISSUE_NODE=$(gh api "repos/roxdavirox/mago-office/issues/$ISSUE_NUMBER" --jq '.node_id')
   ITEM_ID=$(gh api graphql -f query='
     mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}
@@ -131,39 +187,47 @@ if [ -n "$UPDATE_BOARD" ]; then
       }){projectV2Item{id}}
     }
   ' -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$SIZE_FIELD_ID" -f v="$SIZE_OPTION" > /dev/null
-  # Aplicar label de size na issue também
   SIZE_LOWER=$(echo "$SIZE" | tr '[:upper:]' '[:lower:]')
   gh issue edit "$ISSUE_NUMBER" --add-label "size:$SIZE_LOWER" 2>/dev/null || true
-  echo "✅ Board: Size=$SIZE na issue #$ISSUE_NUMBER"
+  echo "✅ Board atualizado: Size=$SIZE na issue #$ISSUE_NUMBER"
 fi
 
-# Postar plano como comentário na issue
+# ── Postar plano como comentário na issue ─────────────────────────────────────
 if [ -n "$POST_COMMENT" ]; then
   COMMENT=$(echo "$PLAN" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
     size  = d.get('size','?')
-    mins  = d.get('minutes','?')
+    hours = d.get('hours','?')
     steps = d.get('steps', [])
     risks = d.get('risks', [])
-    split = d.get('split', [])
+    deps  = d.get('dependencies', [])
     lines = [
-        '## 📐 Estimativa',
-        f'**Size:** \`{size}\` (~{mins}min)',
+        '## 🏗️ Plano rx-architect',
         '',
-        '**Passos:**',
+        f'**Size:** \`{size}\` ({hours})',
+        '',
+        '### Passos',
     ]
     for s in steps:
-        lines.append(f'- {s}')
-    if split:
-        lines.append('')
-        lines.append('**⚠️ Issue grande — quebrar em:**')
-        for s in split:
+        if isinstance(s, dict):
+            lines.append(f\"{s.get('order','•')}. **{s.get('title','')}**\")
+            if s.get('detail'):
+                lines.append(f\"   {s['detail']}\")
+        else:
             lines.append(f'- {s}')
     if risks:
         lines.append('')
-        lines.append('**Riscos:** ' + ', '.join(risks))
+        lines.append('### Riscos')
+        for r in risks: lines.append(f'- ⚠️ {r}')
+    if deps:
+        lines.append('')
+        lines.append('### Dependências')
+        for dep in deps: lines.append(f'- 🔗 {dep}')
+    lines.append('')
+    lines.append('---')
+    lines.append('*Estimativa automática via rx-architect (MAGO)*')
     print('\n'.join(lines))
 except Exception:
     print(sys.stdin.read())
