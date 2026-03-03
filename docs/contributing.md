@@ -3,49 +3,44 @@
 ## Workflow
 
 ```
-Issue aberta
+Issue aberta no GitHub
     │
     ▼
-Branch: feat/issue-N-short-description
+Branch: feat/issue-N-descricao-curta
     │
     ▼
-Desenvolvimento local
+Implementação + testes
     │
     ▼
-Commits (conventional)
+Commits (conventional commits em português lowercase)
     │
     ▼
 PR → base: develop
     │
-    ├─→ CI (typecheck + lint + test + build)
-    ├─→ GitHub Copilot Review
+    ├─→ CI (typecheck + lint + unit tests + E2E + build)
     │
     ▼
-Human Review (1 aprovação)
+Merge squash → develop
     │
     ▼
-Merge → develop
-    │
-    ▼
-Issue fechada (closes #N)
+Issue fechada (closes #N no footer do commit)
 ```
 
 ## Branches
 
 ```bash
-# Criar branch para issue
-git checkout -b feat/issue-3-in-memory-position-store
-git checkout -b fix/issue-14-socket-memory-leak
-
-# Padrão: feat|fix|chore|test|docs/issue-N-descricao-curta
+# Padrão: tipo/issue-N-descricao-curta
+git checkout -b feat/issue-69-loading-error-state
+git checkout -b fix/issue-74-deploy-node-version
+git checkout -b test/issue-70-drag-handler-coverage
 ```
 
 ## Commits
 
 ```
-TYPE(SCOPE): description
+tipo(escopo): descrição em português lowercase
 
-Types:
+Tipos:
   feat     - nova funcionalidade
   fix      - correção de bug
   refactor - refatoração
@@ -54,118 +49,125 @@ Types:
   chore    - tarefa técnica
   ci       - CI/CD
 
-Scopes:
-  office    - componentes da Office View
-  backend   - Express routes e socket
-  socket    - Socket.io events
-  animation - Framer Motion
-  ui        - CSS/design
-  dx        - developer experience
-  ci        - CI/CD workflows
+Escopos:
+  canvas    - OfficeCanvas, OfficeRoom
+  avatar    - AgentAvatar, HumanAvatar, SpeechBubble, AvatarTooltip
+  socket    - useSocket, socket.ts, eventos
+  layout    - office-layout.ts, zonas
+  ui        - OfficeOverlay, ErrorBoundary, OfficeHUD
+  panel     - AgentDetailPanel
+  deploy    - scripts, CI, nginx
+  scaffold  - vite, tsconfig, eslint, deps
 
 Exemplos:
-  feat(office): add AgentAvatar with idle/working animations
-  feat(socket): add office:join and office:leave handlers
-  fix(backend): fix memory leak in office:leave disconnect cleanup
-  test(office): add unit tests for getAgentZone function
-  docs(office): update socket protocol documentation
+  feat(avatar): arrastar agente para zona — override manual de zona
+  fix(deploy): atualizar node para v22 no deploy.sh
+  test(coverage): drag handler em agentavatar e humanavatardragend
+  feat(ui): loading/error state visível na office view
+```
+
+### Regras commitlint
+
+- Header máx. 72 caracteres
+- Subject lowercase
+- Blank line antes do footer (`closes #N`)
+
+```
+feat(ui): error boundary em app.tsx
+                                       ← linha em branco obrigatória
+closes #73
 ```
 
 ## Pull Requests
 
 1. Título segue o mesmo padrão dos commits
-2. Referencie a issue: `closes #N`
-3. Preencha o PR template completamente
-4. Adicione screenshots se houver mudança visual
-5. CI deve passar antes do review
+2. Referencie a issue no footer: `closes #N`
+3. CI deve passar antes do merge
+4. Merge via **squash** (`gh pr merge N --squash --delete-branch`)
 
-## Code Review Checklist
+## Checklist antes do PR
 
-### Para o autor
-- [ ] TypeScript sem erros (`pnpm typecheck`)
-- [ ] Lint passa (`pnpm lint`)
-- [ ] Testes adicionados para nova funcionalidade
-- [ ] Testes passando (`pnpm test`)
-- [ ] Build funciona (`pnpm build`)
-- [ ] Sem `console.log` de debug
-
-### Para o revisor
-- [ ] Lógica de negócio correta
-- [ ] Sem memory leaks (socket cleanup correto)
-- [ ] Animações suaves (sem jank)
-- [ ] Acessibilidade mínima (aria-label em botões)
-- [ ] Tipos TypeScript corretos (sem `any`)
+```bash
+pnpm typecheck        # tsc --noEmit — deve estar limpo
+pnpm lint             # eslint — sem warnings
+pnpm test             # vitest run — todos passando
+pnpm build            # build sem erros
+npx playwright test   # E2E — todos passando (requer build)
+```
 
 ## Padrões de código
 
-### Frontend (React)
+### Componentes React
+
 ```typescript
-// ✅ Correto — props tipadas, FC explícito
+// ✅ Interfaces tipadas + memo para componentes puros
 interface AgentAvatarProps {
-  agent: AgentData
-  onClick: () => void
-  hackerMode?: boolean
+  agent: AgentOfficeData
+  onClick?: (agent: AgentOfficeData) => void
+  isSelected?: boolean
+  canvasRef?: RefObject<HTMLDivElement | null>
 }
 
-export function AgentAvatar({ agent, onClick, hackerMode = false }: AgentAvatarProps) {
+export const AgentAvatar = memo(function AgentAvatar({
+  agent,
+  onClick,
+  isSelected = false,
+}: AgentAvatarProps) {
   // ...
-}
-
-// ❌ Errado — any, sem tipos
-export default function({ agent, onClick }: any) { ... }
+})
 ```
 
-### Backend (Express + FP)
+### Estilos
+
 ```typescript
-// ✅ Correto — Result<T, E> pattern
-import { ok, err, Result } from '@mago/fp-core'
-
-async function getOfficeState(): Promise<Result<OfficeState, OfficeError>> {
-  try {
-    const agents = await getAgentStates()
-    return ok({ agents, users: Array.from(officeUsers.values()) })
-  } catch (e) {
-    return err({ type: 'DB_ERROR', message: String(e) })
-  }
+// ✅ STYLES como const no topo do arquivo
+const STYLES = {
+  overlay: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 50,
+  } as React.CSSProperties,
 }
 
-// ❌ Errado — throw direto
-async function getOfficeState() {
-  const agents = await getAgentStates() // pode jogar exceção sem tratamento
-  return { agents }
-}
+// ✅ Cores via COLORS de src/constants/theme.ts
+import { COLORS } from '../constants/theme'
 ```
 
-## Setup local
+### Testes
 
-```bash
-# No MAGO monorepo
-cd ~/code/mago
+```typescript
+// ✅ describe aninhados por comportamento
+describe('ComponentName — estado X', () => {
+  it('faz Y quando Z', () => {
+    render(<ComponentName prop="value" />)
+    expect(screen.getByRole('button')).toBeTruthy()
+  })
+})
 
-# Backend
-cd apps/flowday-backend
-pnpm install
-pnpm dev
-
-# Frontend  
-cd apps/flowday-web
-pnpm install
-pnpm dev
+// ✅ Mockar framer-motion para testes unitários de componentes
+vi.mock('framer-motion', async () => {
+  const actual = await vi.importActual(...)
+  return { ...actual, motion: { div: ({ children, ...rest }) => <div {...rest}>{children}</div> } }
+})
 ```
 
-## Testes
+## Estrutura de testes
 
-```bash
-# Unitários
-pnpm test
+```
+src/
+├── components/
+│   ├── ComponentName.tsx
+│   └── ComponentName.test.tsx     ← unitários ao lado do componente
+├── hooks/
+│   ├── useHookName.ts
+│   └── useHookName.test.ts
+└── utils/
+    ├── utils.ts
+    └── utils.test.ts
 
-# Com coverage
-pnpm test --coverage
-
-# Watch mode
-pnpm test --watch
-
-# E2E (Playwright)
-cd e2e-suite
-npx playwright test office-view
+e2e/
+├── fixtures.ts                    ← MOCK_AGENTS + setupMocks()
+├── office-view-load.spec.ts
+├── office-agent-interaction.spec.ts
+└── office-agent-drag.spec.ts
 ```

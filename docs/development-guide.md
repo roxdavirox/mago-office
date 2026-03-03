@@ -1,154 +1,155 @@
 # Development Guide
 
-## Setup
+## Setup local
 
 ### Pré-requisitos
-- Node.js 20+ (via NVM)
-- pnpm 9+
-- Redis (via Docker)
-- MAGO rodando localmente
 
-### Verificar se o MAGO está funcionando
+- Node.js 22 (via NVM)
+- pnpm 9+
+- MAGO backend rodando em `localhost:3002` (opcional — app funciona sem ele)
+
 ```bash
-# Backend
-curl http://localhost:3002/health
+nvm use 22
+pnpm install
+pnpm dev         # dev server em localhost:3010
+```
+
+### Variáveis de ambiente
+
+```bash
+# .env (opcional — defaults já funcionam localmente)
+VITE_MAGO_BACKEND_URL=http://localhost:3002
+VITE_CELEBRO_URL=http://localhost:3099
+```
+
+## Comandos
+
+```bash
+pnpm dev          # dev server — localhost:3010 (hot reload)
+pnpm build        # build prod → dist/
+pnpm preview      # serve dist/ em localhost:3010 (usado pelo E2E)
+pnpm typecheck    # tsc --noEmit
+pnpm lint         # eslint src/
+pnpm test         # vitest run (176 unit tests)
+pnpm test --watch # vitest watch mode
+pnpm test --coverage  # cobertura v8 (~99% código de produto)
+npx playwright test              # E2E Chromium (15 tests)
+npx playwright test --ui         # Playwright UI mode
+npx playwright show-report       # último report HTML
+```
+
+## Testar sem o backend MAGO
+
+O app funciona offline com estado de erro/retry:
+
+1. Inicie o dev server: `pnpm dev`
+2. Abra `localhost:3010`
+3. `OfficeOverlay` mostra "connecting to MAGO..." enquanto tenta o fetch
+4. Após falha, mostra "failed to load agents" + botão retry
+
+Para testar com dados mockados, edite temporariamente `src/hooks/useOfficeState.ts` ou use as fixtures E2E (`e2e/fixtures.ts`) como referência.
+
+## Verificar se o MAGO está funcionando
+
+```bash
+# Agentes
+curl http://localhost:3002/api/dashboard/agents | python3 -m json.tool
 
 # Socket (deve retornar 200)
 curl http://localhost:3002/
 
-# Opus Planner
-curl http://localhost:3095/health
-
-# Celebro Gateway
+# Celebro
 curl http://localhost:3099/health
 ```
 
 ## Agentes MAGO
 
-Os agentes estão configurados em `/home/rx/lab/mago/config/agents.yaml`:
+| ID real           | Nome     | Role         | Ícone |
+| ----------------- | -------- | ------------ | ----- |
+| `rx-architect`    | Claude   | architect    | 🤖    |
+| `rx-backend`      | Gemini   | backend      | 🔬    |
+| `rx-orchestrator` | OpenCode | orchestrator | ⚡    |
 
-| ID | Modelo | Role | Porta |
-|----|--------|------|-------|
-| agent-1 | claude-sonnet-4 | code-reviewer | PM2 #6 |
-| agent-2 | gemini-2.5-flash | analyzer | PM2 #7 |
-| agent-3 | opencode/big-pickle | implementer | PM2 #8 |
+## CI/CD
 
-### Verificar status dos agentes
-```bash
-# Via API
-curl http://localhost:3002/api/dashboard/agents/summary
-
-# Via PM2
-pm2 list
-
-# Logs de um agente
-pm2 logs mago-agent-1 --lines 50
-```
-
-## Flowday Board
-
-O board dos agentes é acessível em:
-- **Web**: https://mago.technology
-- **API**: `GET http://localhost:3002/api/boards/b1`
-
-### Criar uma task manualmente
-```bash
-curl -X POST http://localhost:3002/api/boards/b1/items \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "feat(office): add AgentAvatar component",
-    "description": "Closes #9",
-    "priority": "HIGH",
-    "assignee": "rx-agent-3"
-  }'
-```
-
-## MCP Tools disponíveis
-
-O MAGO expõe 27 ferramentas MCP para Claude Code:
-
-```bash
-# Listar tasks no board
-mcp board_list_items b1
-
-# Criar task
-mcp board_create_item b1 "feat(office): add socket events" "Closes #1" HIGH rx-agent-3
-
-# Mover task
-mcp scrum_move_task <taskId> CURRENT
-
-# Status dos agentes
-mcp agent_list
-```
-
-## Opus Planner
-
-Para decompor uma feature em tasks:
-```bash
-curl -X POST http://localhost:3095/plan \
-  -H "Content-Type: application/json" \
-  -d '{
-    "feature": "Implementar AgentAvatar com animações Framer Motion...",
-    "project": "mago",
-    "mode": "medium"
-  }'
-```
-
-## Workflow GitHub ↔ Flowday
+O pipeline (`.github/workflows/ci.yml`) roda em push/PR para `develop` ou `main`:
 
 ```
-GitHub Issue criada
-    │
-    ▼
-Task criada no Flowday Board (via MCP ou API)
-    │
-    ▼
-MAGO agent pega a task (loop automático a cada 15s)
-    │
-    ▼
-Agent trabalha em worktree isolada
-    │
-    ▼
-Commit: feat(office): <descrição> (closes #N)
-    │
-    ▼
-Coordinator detecta WORK_COMPLETED
-    │
-    ▼ (mode=medium: checkpoint por rodada)
-PR criada no GitHub
-    │
-    ▼
-CI + Code Review → Aprovação humana
-    │
-    ▼
-Merge → develop
-    │
-    ▼
-Flowday card → Done
-    │
-    ▼
-GitHub Issue fechada
+1. typecheck     — tsc --noEmit
+2. lint          — eslint src/
+3. test          — vitest run
+4. build         — vite build
+5. e2e           — playwright test (needs: ci)
+```
+
+O deploy (`.github/workflows/deploy.yml`) roda em push para `main`:
+
+```
+SSH → VPS → nvm use 22 → pnpm install → pnpm build → nginx recarrega
 ```
 
 ## Debugging
 
 ### Socket events não chegando
-```bash
-# Verificar se socket está conectado
-# No browser: localStorage.debug = 'socket.io-client:*'
 
-# Verificar logs do backend
-pm2 logs flowday-backend --lines 100 | grep office
+```bash
+# No browser DevTools console:
+localStorage.debug = 'socket.io-client:*'
+# Recarregue a página para ver logs detalhados
 ```
 
-### Agente não está pegando tasks
+### Agentes não aparecem
+
 ```bash
-# Verificar locks ativos
-curl http://localhost:3002/api/locks/active
+# Verificar se o endpoint responde
+curl http://localhost:3002/api/dashboard/agents
 
-# Limpar locks expirados
-curl -X POST http://localhost:3002/api/locks/cleanup
+# Verificar CORS (se usar URL diferente de localhost:3002)
+# Ajustar VITE_MAGO_BACKEND_URL no .env
+```
 
-# Verificar heartbeat dos agentes
-curl http://localhost:3002/api/dashboard/agents/summary
+### Testes falhando
+
+```bash
+# Rodar um arquivo específico
+npx vitest run src/components/AgentAvatar.test.tsx
+
+# Rodar com verbose
+npx vitest run --reporter=verbose
+
+# E2E — ver screenshots de falhas
+npx playwright test --headed   # modo com browser visível
+ls test-results/               # screenshots + traces
+```
+
+### Build com erro de tipo
+
+```bash
+npx tsc --noEmit 2>&1 | head -30
+```
+
+## Estrutura de arquivos relevantes
+
+```
+mago-office/
+├── src/
+│   ├── main.tsx                 ← ErrorBoundary + App
+│   ├── App.tsx                  ← orquestra tudo
+│   ├── services/socket.ts       ← singleton socket.io-client
+│   ├── data/office-layout.ts    ← zonas + lógica de posicionamento
+│   ├── hooks/
+│   │   ├── useSocket.ts         ← 5 estados de conexão
+│   │   └── useOfficeState.ts    ← estado central completo
+│   ├── components/              ← todos com .test.tsx ao lado
+│   └── constants/               ← theme, agent, status
+├── e2e/
+│   ├── fixtures.ts              ← MOCK_AGENTS, setupMocks()
+│   └── *.spec.ts
+├── .github/workflows/
+│   ├── ci.yml                   ← CI completo + E2E
+│   └── deploy.yml               ← SSH deploy
+├── scripts/
+│   └── deploy.sh                ← nvm use 22 + pnpm build
+├── playwright.config.ts         ← webServer port 3010
+└── vite.config.ts               ← port 3010, preview port 3010
 ```

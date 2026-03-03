@@ -1,69 +1,70 @@
 # Socket Protocol
 
 Conexão: `ws://localhost:3002` via `socket.io-client`.
-O socket usa `autoConnect: false` — conectado manualmente via `connectSocket()` ao montar.
+
+O socket usa `autoConnect: false` — conectado manualmente via `connectSocket()` ao montar o app. A instância é um **singleton** reutilizado por toda a aplicação (`src/services/socket.ts`).
 
 ## Eventos consumidos (Backend → Cliente)
 
-| Evento | Payload | Uso |
-|--------|---------|-----|
-| `agent:status:updated` | `{ agentId, status, lastAction, timestamp }` | Recalcula zona do agente |
-| `bus:message` | `{ from, type, payload: { content? }, timestamp }` | Dispara SpeechBubble no agente sender |
-| `office:user:joined` | `{ socketId, userId, name, x, y }` | Adiciona avatar humano |
-| `office:user:left` | `{ socketId }` | Remove avatar humano |
-| `office:user:moved` | `{ socketId, x, y }` | Anima avatar humano para nova posição |
+| Evento                 | Payload                                                    | Handler em                                   |
+| ---------------------- | ---------------------------------------------------------- | -------------------------------------------- |
+| `agent:status:updated` | `{ agentId, status, lastAction, currentTask?, timestamp }` | `useOfficeState` → `AGENT_STATUS_UPDATED`    |
+| `bus:message`          | `{ from, type, payload: { content? }, timestamp }`         | `useOfficeState` → `AGENT_SPEECH` + timer 5s |
+| `office:user:joined`   | `{ socketId, userId, name, x, y }`                         | `useOfficeState` → `USER_JOINED`             |
+| `office:user:left`     | `{ socketId }`                                             | `useOfficeState` → `USER_LEFT`               |
+| `office:user:moved`    | `{ socketId, x, y }`                                       | `useOfficeState` → `USER_MOVED`              |
 
 ## Eventos emitidos (Cliente → Backend)
 
-| Evento | Payload | Quando |
-|--------|---------|--------|
-| `office:join` | `{ userId: string, name: string }` | Ao montar a Office View |
-| `office:leave` | _(sem payload)_ | Ao desmontar / fechar aba |
-| `office:user:move` | `{ x: number, y: number }` | `onDragEnd` do HumanAvatar |
+| Evento             | Payload                            | Quando                                      |
+| ------------------ | ---------------------------------- | ------------------------------------------- |
+| `office:join`      | `{ userId: string, name: string }` | Ao montar a Office View                     |
+| `office:leave`     | _(sem payload)_                    | Ao desmontar / fechar aba                   |
+| `office:user:move` | `{ x: number, y: number }`         | `onDragEnd` do HumanAvatar (debounce 100ms) |
 
 ## Schemas TypeScript
 
 ```typescript
-// agent:status:updated
-interface AgentStatusUpdated {
+// src/services/socket.ts
+
+export interface AgentStatus {
   agentId: string
   status: string
-  lastAction: string   // equivalente a current_task na REST API
-  timestamp: string
+  lastAction?: string
+  currentTask?: string // fallback se lastAction não vier
+  timestamp?: string
 }
 
-// bus:message
-interface BusMessage {
+export interface BusMessage {
   from: string
-  type: string
+  type?: string
   payload: { content?: string; [key: string]: unknown }
-  timestamp: string
+  timestamp?: string
 }
 
-// office:user:joined / office:user:moved
-interface OfficeUserJoined {
+export interface OfficeUser {
   socketId: string
   userId: string
   name: string
-  x: number   // 0–100 (% do canvas)
-  y: number
-  joinedAt?: string
-}
-
-interface OfficeUserMoved {
-  socketId: string
-  x: number
-  y: number
-}
-
-interface OfficeUserLeft {
-  socketId: string
+  x: number // 0–100 (% do canvas)
+  y: number // 0–100 (% do canvas)
 }
 ```
 
+## Estados de conexão (`useSocket`)
+
+```typescript
+// src/hooks/useSocket.ts
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error'
+```
+
+Exibidos pelo `OfficeHUD` com indicador colorido e texto.
+
 ## Notas de implementação
 
-- Rate limit sugerido: 1 evento `office:user:move` por 50ms por socket
-- `x` e `y` devem estar entre 0 e 100
-- Cleanup no unmount: `socket.emit('office:leave')` + remover listeners
-- Não usar `socket.disconnect()` no unmount — a instância é singleton reutilizada
+- `x` e `y` estão sempre entre 0 e 100 (% do canvas)
+- Debounce de 100ms no `office:user:move` para evitar flood de eventos
+- Cleanup no unmount: remover todos os listeners via `socket.off()`
+- **Não chamar** `socket.disconnect()` no unmount — a instância é singleton
+- `lastAction` no evento de socket corresponde a `current_task` da REST API
+- Ao receber `agent:status:updated`, qualquer override manual desse agente é removido

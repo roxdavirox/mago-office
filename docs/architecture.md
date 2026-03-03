@@ -7,97 +7,139 @@ O `mago-office` é um **app React standalone** que consome o backend MAGO como c
 ## Diagrama
 
 ```
-┌──────────────────────────────────────────────┐
-│           mago-office (standalone)            │
-│                                              │
-│  React 19 + Vite 6   →  office.iae.wtf       │
-│                                              │
-│  App.tsx                                     │
-│   └── OfficeCanvas.tsx         [v0.2 ✓]      │
-│        ├── OfficeRoom.tsx × 6  [v0.2 ✓]      │
-│        │    ├── AgentAvatar.tsx         [wip] │
-│        │    │    └── SpeechBubble.tsx   [wip] │
-│        │    └── HumanAvatar.tsx (drag)  [v0.4]│
-│        ├── OfficeHUD.tsx        [v0.2 ✓]      │
-│        └── AgentDetailPanel.tsx         [v0.5]│
-│                                              │
-│  hooks/                                      │
-│   ├── useSocket.ts       [v0.1 ✓]            │
-│   └── useOfficeState.ts                [wip] │
-│                                              │
-│  data/office-layout.ts   [v0.2 ✓]            │
-│   ├── OFFICE_ZONES (6 zonas)                 │
-│   ├── getAgentZone(status, current_task)      │
-│   └── getAgentPosition(zoneId, agentIndex)    │
-│                                              │
-│  constants/status.ts     [v0.2 ✓]            │
-└──────────────────┬───────────────────────────┘
-                   │  socket.io-client (autoConnect:false)
-                   │  fetch REST
-                   ▼
-┌──────────────────────────────────────────────┐
-│     MAGO Backend (localhost:3002)             │
-│                                              │
-│  REST endpoints consumidos:                  │
-│  • GET /api/dashboard/agents                 │
-│                                              │
-│  Eventos socket emitidos pelo backend:       │
-│  • agent:status:updated                      │
-│  • bus:message                               │
-│                                              │
-│  Eventos socket de presença humana:          │
-│  • office:user:joined / moved / left         │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│              mago-office (standalone)                     │
+│                                                          │
+│  React 19 + Vite 6   →  office.iae.wtf                   │
+│                                                          │
+│  main.tsx                                                │
+│   └── ErrorBoundary                                      │
+│        └── App.tsx                                       │
+│             ├── OfficeCanvas                             │
+│             │    ├── OfficeRoom × 6                      │
+│             │    ├── AgentAvatar × N                     │
+│             │    │    ├── SpeechBubble                   │
+│             │    │    └── AvatarTooltip                  │
+│             │    ├── HumanAvatar × N (drag)              │
+│             │    ├── OfficeHUD                           │
+│             │    └── OfficeOverlay (loading/error)       │
+│             ├── OnlineUsersList                          │
+│             └── AgentDetailPanel (slide-in)              │
+│                                                          │
+│  hooks/                                                  │
+│   ├── useSocket.ts        — 5 estados de conexão         │
+│   └── useOfficeState.ts   — REST + socket + overrides    │
+│                                                          │
+│  data/office-layout.ts                                   │
+│   ├── OFFICE_ZONES (6 zonas)                             │
+│   ├── getAgentZone(status, current_task) → zoneId        │
+│   └── getAgentPosition(zoneId, agentIndex) → {x,y}      │
+│                                                          │
+│  constants/                                              │
+│   ├── agent.ts   — AGENT_COLORS, AGENT_STATUS_LABEL      │
+│   ├── status.ts  — STATUS_COLOR                          │
+│   └── theme.ts   — COLORS (dark theme)                   │
+└──────────────────────┬───────────────────────────────────┘
+                       │  socket.io-client (autoConnect:false)
+                       │  fetch REST
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│     MAGO Backend (localhost:3002)                         │
+│                                                          │
+│  REST:                                                   │
+│  • GET /api/dashboard/agents                             │
+│                                                          │
+│  Socket → cliente:                                       │
+│  • agent:status:updated                                  │
+│  • bus:message                                           │
+│  • office:user:joined / moved / left                     │
+│                                                          │
+│  Socket ← cliente:                                       │
+│  • office:join / office:leave / office:user:move         │
+└──────────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│     Celebro (localhost:3099)                              │
+│  • POST /chat  — mensagens do AgentDetailPanel           │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ## Shape real do agente (GET /api/dashboard/agents)
 
 ```typescript
-interface Agent {
-  id: string           // 'rx-backend' | 'rx-architect' | 'rx-orchestrator'
-  name: string         // 'Backend' | 'Architect' | 'Orchestrator'
-  role: string         // 'backend' | 'architect' | 'orchestrator'
-  status: string       // 'idle' | 'working' | 'thinking' | 'offline' | 'blocked'
-  current_task: string // ex: 'Aguardando próximo ciclo' (equivalente a lastAction)
+// src/hooks/useOfficeState.ts
+interface RawAgent {
+  id: string // 'rx-architect' | 'rx-backend' | 'rx-orchestrator'
+  name: string
+  role: string // 'architect' | 'backend' | 'orchestrator'
+  status: string // 'idle' | 'working' | 'thinking' | 'offline' | 'blocked'
+  current_task: string // equivalente a lastAction nos eventos de socket
   progress: number | null
   last_heartbeat: string
   messages_count: number
 }
+
+// Enriquecido pelo hook
+interface AgentOfficeData {
+  id: string
+  name: string
+  role: string
+  status: string
+  currentTask: string
+  zoneId: string
+  position: { x: number; y: number } // % do canvas
+  color: string
+  speechText: string | null
+  isManualOverride: boolean // true após drag manual
+}
 ```
 
-> **Nota:** o campo `lastAction` mencionado em issues anteriores corresponde ao `current_task` da API real.
-
-## Mapeamento de zona
+## Mapeamento status/current_task → zona
 
 `getAgentZone(status, current_task)` em `src/data/office-layout.ts`:
 
-| status | current_task | zona |
-|--------|-------------|------|
-| `idle` | qualquer | `coffee-corner` |
-| `offline` / `blocked` | qualquer | `lobby` |
-| null / undefined | qualquer | `lobby` |
-| `working` / `thinking` | inclui "review" / "revisando" / "aprovando" | `review-room` |
-| `working` / `thinking` | inclui "plan" / "task" / "sprint" / "backlog" | `planning-board` |
-| `working` / `thinking` | inclui "analyz" / "analis" / "inspect" / "debug" | `analysis-area` |
-| `working` / `thinking` | outros | `dev-zone` |
+| status                 | current_task                                     | zona             |
+| ---------------------- | ------------------------------------------------ | ---------------- |
+| `idle`                 | qualquer                                         | `coffee-corner`  |
+| `offline` / `blocked`  | qualquer                                         | `lobby`          |
+| `null` / `undefined`   | qualquer                                         | `lobby`          |
+| `working` / `thinking` | inclui "review" / "revisando" / "aprovando"      | `review-room`    |
+| `working` / `thinking` | inclui "plan" / "task" / "sprint" / "backlog"    | `planning-board` |
+| `working` / `thinking` | inclui "analyz" / "analis" / "inspect" / "debug" | `analysis-area`  |
+| `working` / `thinking` | outros                                           | `dev-zone`       |
 
 ## Posicionamento anti-sobreposição
 
 `getAgentPosition(zoneId, agentIndex)` retorna `{ x, y }` em % do canvas:
 
-- Índice 0 (rx-architect / Claude): offset `{ x:25%, y:40% }` dentro da zona
-- Índice 1 (rx-backend / Gemini): offset `{ x:50%, y:40% }`
-- Índice 2 (rx-orchestrator / OpenCode): offset `{ x:75%, y:40% }`
+- Índice 0 (`rx-architect`): offset `{ x:25%, y:40% }` dentro da zona
+- Índice 1 (`rx-backend`): offset `{ x:50%, y:40% }`
+- Índice 2 (`rx-orchestrator`): offset `{ x:75%, y:40% }`
+
+## Override manual de zona (drag)
+
+O usuário pode arrastar um `AgentAvatar` para qualquer zona do canvas:
+
+```
+Drag do agente
+  → onDragEnd → detecta zona pelo ponto de soltura
+  → (zona válida) → dispatch AGENT_ZONE_OVERRIDE → isManualOverride=true
+  → badge ⚓ aparece + botão "reset ↺"
+  → (zona inválida) → shake animation, snap back
+  → (próximo agent:status:updated) → override limpo automaticamente
+  → (click em reset) → dispatch AGENT_ZONE_CLEAR_OVERRIDE
+```
 
 ## Fluxo de dados — carga inicial
 
 ```
 App monta
-  → useOfficeState
+  → dispatch FETCH_START (isLoading=true)
   → GET /api/dashboard/agents
-  → para cada agente: getAgentZone(status, current_task) → zoneId
-  → getAgentPosition(zoneId, agentIndex) → { x, y }
-  → renderiza AgentAvatar na posição calculada
+  → (sucesso) → dispatch AGENTS_LOADED → agentes calculados
+  → (erro)    → dispatch FETCH_ERROR → OfficeOverlay mostra erro + retry
+  → retry() → retryCount++ → useEffect re-executa fetch
 ```
 
 ## Fluxo de dados — atualização em tempo real
@@ -105,8 +147,8 @@ App monta
 ```
 MAGO agent muda estado
   → backend emite agent:status:updated { agentId, status, lastAction }
-  → useOfficeState recebe
-  → recalcula zona
+  → dispatch AGENT_STATUS_UPDATED
+  → override manual desse agente limpo
   → AgentAvatar anima para nova posição (Framer Motion layoutId)
 ```
 
@@ -117,48 +159,28 @@ Usuário abre office.iae.wtf
   → socket conecta → emite office:join { userId, name }
   → backend broadcast office:user:joined para outros clientes
   → usuário arrasta HumanAvatar
-  → onDragEnd emite office:user:move { x, y }
+  → onDragEnd (debounce 100ms) → emite office:user:move { x, y }
   → outros recebem office:user:moved e animam
 ```
 
-## Estrutura de arquivos
+## Tratamento de erros
 
-```
-mago-office/
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── services/socket.ts            ← singleton, autoConnect:false
-│   ├── data/office-layout.ts         ← zonas + lógica de posicionamento
-│   ├── hooks/
-│   │   ├── useSocket.ts              ← 5 estados de conexão
-│   │   └── useOfficeState.ts         ← estado central [wip]
-│   ├── components/
-│   │   ├── OfficeCanvas.tsx          ← canvas full-screen
-│   │   ├── OfficeRoom.tsx            ← zona individual
-│   │   ├── OfficeHUD.tsx             ← status bar
-│   │   ├── AgentAvatar.tsx           ← [wip]
-│   │   ├── SpeechBubble.tsx          ← [wip]
-│   │   ├── HumanAvatar.tsx           ← [v0.4]
-│   │   └── AgentDetailPanel.tsx      ← [v0.5]
-│   └── constants/
-│       └── status.ts                 ← STATUS_COLOR, STATUS_LABEL
-├── .github/workflows/
-│   ├── ci.yml                        ← typecheck + lint + test + build
-│   ├── deploy.yml                    ← push main → SSH → pnpm build
-│   └── ai-review.yml                 ← self-hosted runner, OpenCode
-└── scripts/
-    ├── branch-create.sh
-    ├── pr-create.sh
-    ├── pr-check.sh
-    ├── pr-merge.sh
-    └── pr-review.sh
-```
+- **Fetch falha** → `OfficeOverlay` mostra `role="alert"` + botão retry
+- **Render throw** → `ErrorBoundary` captura, mostra tela de fallback + botão reload
+- **Socket desconectado** → `OfficeHUD` mostra estado "connecting" / "reconnecting"
+
+## Testes
+
+| Camada    | Ferramenta                      | Contagem                 |
+| --------- | ------------------------------- | ------------------------ |
+| Unitários | Vitest + @testing-library/react | 176 testes / 15 arquivos |
+| E2E       | Playwright (Chromium)           | 15 testes / 3 specs      |
+| Cobertura | v8                              | ~99% código de produto   |
 
 ## Deploy
 
 - **URL**: https://office.iae.wtf
-- **VPS**: `/home/rx/lab/mago-office/dist/`
+- **VPS**: `~/lab/mago-office/dist/`
 - **Trigger**: push em `main` → GitHub Actions → SSH → `pnpm build` → nginx
 - **Nginx**: serve `dist/` com `try_files $uri /index.html` (SPA)
-- **Runner CI**: self-hosted `vps-mago-office` em `/home/rx/actions-runner-mago-office/`
+- **Node**: 22 LTS (`nvm use 22` no `scripts/deploy.sh`)
