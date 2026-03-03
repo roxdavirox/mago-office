@@ -16,7 +16,7 @@ git pull origin main --ff-only
 echo "--- Node.js via NVM ---"
 # shellcheck source=/dev/null
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-nvm use 20
+nvm use 22
 
 echo "--- Instalar dependências ---"
 COREPACK_ENABLE_STRICT=0 pnpm install --frozen-lockfile
