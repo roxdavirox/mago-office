@@ -6,6 +6,9 @@ import type {
   OfficeUser,
 } from '../services/socket'
 import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../data/office-layout'
+import { MOCK_AGENTS } from '../data/mock-agents'
+
+const IS_MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -253,8 +256,13 @@ export function useOfficeState(): UseOfficeStateReturn {
     setRetryCount((c) => c + 1)
   }, [])
 
-  // ── Initial load via REST ────────────────────────────────────────────────
+  // ── Initial load via REST (or mock) ─────────────────────────────────────
   useEffect(() => {
+    if (IS_MOCK_MODE) {
+      dispatch({ type: 'AGENTS_LOADED', agents: MOCK_AGENTS })
+      return
+    }
+
     let cancelled = false
 
     dispatch({ type: 'FETCH_START' })
@@ -281,6 +289,8 @@ export function useOfficeState(): UseOfficeStateReturn {
 
   // ── Socket events ───────────────────────────────────────────────────────
   useEffect(() => {
+    if (IS_MOCK_MODE) return
+
     const socket = getSocket()
 
     const onAgentStatus = (data: SocketAgentStatus) => {
