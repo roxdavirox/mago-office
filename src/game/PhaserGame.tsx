@@ -52,6 +52,11 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
         },
+        // Arcade Physics para colisão de sprites com layers (#91)
+        physics: {
+          default: 'arcade',
+          arcade: { gravity: { x: 0, y: 0 }, debug: false },
+        },
         // UI React fica sobre o canvas via z-index — não precisa de transparência
         transparent: false,
       }

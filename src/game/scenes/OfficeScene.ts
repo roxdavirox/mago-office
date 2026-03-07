@@ -2,14 +2,14 @@ import Phaser from 'phaser'
 import { EventBus } from '../EventBus'
 
 /**
- * OfficeScene — cena principal do jogo (#88, expandida em #90).
+ * OfficeScene — cena principal do jogo (#88 → #91).
  *
- * Carrega office-map.json (34×35 tiles, 544×560px) e renderiza as camadas:
+ * Carrega office-map.json (34×35 tiles, 544×560px) e renderiza:
  *   floor      — base do escritório (carpet por zona)
- *   walls      — paredes, janelas e portas
- *   furniture  — mesas, cadeiras e plantas
+ *   walls      — paredes + colisão (GIDs 2-3, 7-8)
+ *   furniture  — mesas/cadeiras + colisão (GIDs 4-5)
  *
- * Lê zone-markers (objectgroup) para expor getZoneCenterWorld() (#92).
+ * Expõe getZoneBounds() e getZoneCenterWorld() para AgentSprite (#92).
  *
  * Fluxo: PreloadScene → OfficeScene
  */
@@ -24,6 +24,8 @@ export type ZoneId =
 
 export class OfficeScene extends Phaser.Scene {
   private zoneRects = new Map<string, Phaser.Geom.Rectangle>()
+  wallsLayer: Phaser.Tilemaps.TilemapLayer | null = null
+  furnitureLayer: Phaser.Tilemaps.TilemapLayer | null = null
 
   constructor() {
     super({ key: 'OfficeScene' })
@@ -31,13 +33,18 @@ export class OfficeScene extends Phaser.Scene {
 
   create() {
     const map = this.make.tilemap({ key: 'office-map' })
-
     const tileset = map.addTilesetImage('tileset-placeholder', 'tile-placeholder')
 
     if (tileset) {
       map.createLayer('floor', tileset, 0, 0)
-      map.createLayer('walls', tileset, 0, 0)
-      map.createLayer('furniture', tileset, 0, 0)
+
+      this.wallsLayer = map.createLayer('walls', tileset, 0, 0)
+      // GID 3 = wall (sólido). Portas (GID 7) e janelas (GID 8) são passáveis.
+      this.wallsLayer?.setCollisionBetween(3, 3)
+
+      this.furnitureLayer = map.createLayer('furniture', tileset, 0, 0)
+      // GID 4 = desk, 5 = chair — colisão. Planta (GID 6) é decorativa.
+      this.furnitureLayer?.setCollisionBetween(4, 5)
     }
 
     this.parseZoneMarkers(map)
@@ -46,7 +53,12 @@ export class OfficeScene extends Phaser.Scene {
     EventBus.emit('scene-ready', this)
   }
 
-  /** Retorna o centro em pixels de uma zona pelo seu zoneId. */
+  /** Retorna os bounds em pixels de uma zona. */
+  getZoneBounds(zoneId: string): Phaser.Geom.Rectangle | null {
+    return this.zoneRects.get(zoneId) ?? null
+  }
+
+  /** Retorna o centro em pixels de uma zona. */
   getZoneCenterWorld(zoneId: string): { x: number; y: number } | null {
     const rect = this.zoneRects.get(zoneId)
     if (!rect) return null
@@ -64,24 +76,18 @@ export class OfficeScene extends Phaser.Scene {
       if (!zoneIdProp) continue
 
       const zoneId = zoneIdProp.value as string
-      const rect = new Phaser.Geom.Rectangle(
-        obj.x ?? 0,
-        obj.y ?? 0,
-        obj.width ?? 0,
-        obj.height ?? 0,
+      this.zoneRects.set(
+        zoneId,
+        new Phaser.Geom.Rectangle(obj.x ?? 0, obj.y ?? 0, obj.width ?? 0, obj.height ?? 0),
       )
-      this.zoneRects.set(zoneId, rect)
     }
   }
 
   private setupCamera(map: Phaser.Tilemaps.Tilemap) {
     const cam = this.cameras.main
     cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
-
-    // Centraliza o mapa no viewport inicial
     cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
 
-    // Re-centraliza ao redimensionar a janela
     this.scale.on(Phaser.Scale.Events.RESIZE, () => {
       cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
     })
