@@ -2,11 +2,14 @@ import Phaser from 'phaser'
 import { EventBus } from '../EventBus'
 
 /**
- * OfficeScene — cena principal do jogo (#88).
+ * OfficeScene — cena principal do jogo (#88, expandida em #90).
  *
- * Carrega o tilemap office-map.json, renderiza a camada floor,
- * lê os objetos da camada zone-markers e expõe getZoneCenterWorld()
- * para AgentSprite (#92) posicionar personagens por zoneId.
+ * Carrega office-map.json (34×35 tiles, 544×560px) e renderiza as camadas:
+ *   floor      — base do escritório (carpet por zona)
+ *   walls      — paredes, janelas e portas
+ *   furniture  — mesas, cadeiras e plantas
+ *
+ * Lê zone-markers (objectgroup) para expor getZoneCenterWorld() (#92).
  *
  * Fluxo: PreloadScene → OfficeScene
  */
@@ -29,11 +32,12 @@ export class OfficeScene extends Phaser.Scene {
   create() {
     const map = this.make.tilemap({ key: 'office-map' })
 
-    // Adiciona o tileset placeholder (será substituído em #89)
     const tileset = map.addTilesetImage('tileset-placeholder', 'tile-placeholder')
 
     if (tileset) {
       map.createLayer('floor', tileset, 0, 0)
+      map.createLayer('walls', tileset, 0, 0)
+      map.createLayer('furniture', tileset, 0, 0)
     }
 
     this.parseZoneMarkers(map)
