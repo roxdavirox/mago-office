@@ -1,0 +1,72 @@
+{
+  "compressionlevel": -1,
+  "height": 20,
+  "infinite": false,
+  "layers": [
+    {
+      "data": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+               1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      "height": 20,
+      "id": 1,
+      "name": "floor",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 20,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 2,
+      "name": "zone-markers",
+      "objects": [
+        { "height": 192, "id": 1, "name": "dev-zone",       "properties": [{"name":"zoneId","type":"string","value":"dev-zone"}],       "type": "", "visible": true, "width": 160, "x": 16,  "y": 32  },
+        { "height": 192, "id": 2, "name": "review-room",    "properties": [{"name":"zoneId","type":"string","value":"review-room"}],    "type": "", "visible": true, "width": 160, "x": 192, "y": 32  },
+        { "height": 192, "id": 3, "name": "planning-board", "properties": [{"name":"zoneId","type":"string","value":"planning-board"}], "type": "", "visible": true, "width": 160, "x": 368, "y": 32  },
+        { "height": 192, "id": 4, "name": "analysis-area",  "properties": [{"name":"zoneId","type":"string","value":"analysis-area"}],  "type": "", "visible": true, "width": 256, "x": 16,  "y": 240 },
+        { "height": 192, "id": 5, "name": "coffee-corner",  "properties": [{"name":"zoneId","type":"string","value":"coffee-corner"}],  "type": "", "visible": true, "width": 256, "x": 288, "y": 240 },
+        { "height": 96,  "id": 6, "name": "lobby",          "properties": [{"name":"zoneId","type":"string","value":"lobby"}],          "type": "", "visible": true, "width": 512, "x": 16,  "y": 448 }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 3,
+  "nextobjectid": 7,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.11.0",
+  "tileheight": 16,
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "source": "tileset-placeholder.json"
+    }
+  ],
+  "tilewidth": 16,
+  "type": "map",
+  "version": "1.10",
+  "width": 20
+}

@@ -1,5 +1,4 @@
 import Phaser from 'phaser'
-import { EventBus } from '../EventBus'
 
 /**
  * BootScene — cena inicial minimalista.
@@ -33,6 +32,6 @@ export class BootScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    EventBus.emit('scene-ready', this)
+    this.scene.start('PreloadScene')
   }
 }
