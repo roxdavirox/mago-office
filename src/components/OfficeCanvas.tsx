@@ -44,7 +44,7 @@ export function OfficeCanvas({
   canvasRef,
 }: OfficeCanvasProps) {
   return (
-    <div ref={canvasRef} style={STYLES.canvas}>
+    <div ref={canvasRef} style={STYLES.canvas} data-testid="office-canvas">
       {/* Decorative grid */}
       <div style={STYLES.grid} />
 

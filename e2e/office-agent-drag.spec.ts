@@ -31,7 +31,7 @@ test.describe('agent drag to zone', () => {
 
   test('drag agent to another zone shows anchor badge', async ({ page }) => {
     const agent = page.getByLabel(/agent rx-architect/i)
-    const canvas = page.locator('[style*="height: 100vh"]').first()
+    const canvas = page.getByTestId('office-canvas')
 
     const agentBox = await agent.boundingBox()
     const canvasBox = await canvas.boundingBox()
@@ -53,7 +53,7 @@ test.describe('agent drag to zone', () => {
 
   test('reset button appears after drag and clears override on click', async ({ page }) => {
     const agent = page.getByLabel(/agent rx-architect/i)
-    const canvas = page.locator('[style*="height: 100vh"]').first()
+    const canvas = page.getByTestId('office-canvas')
 
     const agentBox = await agent.boundingBox()
     const canvasBox = await canvas.boundingBox()
