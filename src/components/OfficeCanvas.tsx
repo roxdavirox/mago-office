@@ -16,12 +16,14 @@ interface OfficeCanvasProps {
 
 const STYLES = {
   canvas: {
-    position: 'relative',
+    position: 'absolute',
+    inset: 0,
     width: '100%',
-    height: '100vh',
-    background: COLORS.bg,
+    height: '100%',
+    background: 'transparent',
     overflow: 'hidden',
     fontFamily: 'JetBrains Mono, monospace',
+    zIndex: 1,
   } as React.CSSProperties,
 
   grid: {
