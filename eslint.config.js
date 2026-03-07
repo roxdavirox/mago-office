@@ -30,6 +30,8 @@ export default [
         AbortController: 'readonly',
         KeyboardEvent: 'readonly',
         localStorage: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
         React: 'readonly',
         JSX: 'readonly',
         import: 'readonly',
