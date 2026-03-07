@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/components/OfficeCanvas.tsx","./src/components/OfficeHUD.tsx","./src/components/OfficeRoom.tsx","./src/data/office-layout.test.ts","./src/data/office-layout.ts","./src/hooks/useSocket.test.ts","./src/hooks/useSocket.ts","./src/services/socket.ts"],"version":"5.9.3"}

@@ -1,13 +1,57 @@
 import Phaser from 'phaser'
+import type { AgentOfficeData } from '../hooks/useOfficeState'
 
 /**
- * EventBus — bridge de comunicação entre React e Phaser.
+ * Mapa de eventos do EventBus com tipos completos (#103).
  *
- * React emite eventos para a cena Phaser atualizar sprites.
- * Phaser emite eventos para React atualizar UI (posição de SpeechBubble, etc).
+ * React emite → Phaser consome:
+ *   agents-updated   — sincroniza AgentSprites com estado atual
  *
- * Uso:
- *   EventBus.emit('agents-updated', agents)
- *   EventBus.on('scene-ready', (scene) => { ... })
+ * Phaser emite → React consome:
+ *   scene-ready      — OfficeScene pronta para receber comandos
+ *   agent-speech-position — posição em tela do balão de fala
+ *   human-moved      — posição do HumanSprite (para emitir via socket)
  */
-export const EventBus = new Phaser.Events.EventEmitter()
+export interface OfficeEventMap {
+  'scene-ready': [scene: Phaser.Scene]
+  'agents-updated': [agents: AgentOfficeData[]]
+  'agent-speech': [agentId: string, text: string]
+  'agent-speech-position': [agentId: string, x: number, y: number]
+  'human-moved': [x: number, y: number]
+}
+
+/** Wrapper tipado sobre Phaser.Events.EventEmitter. */
+class TypedEventBus {
+  private readonly emitter = new Phaser.Events.EventEmitter()
+
+  on<K extends keyof OfficeEventMap>(
+    event: K,
+    fn: (...args: OfficeEventMap[K]) => void,
+  ): this {
+    this.emitter.on(event as string, fn)
+    return this
+  }
+
+  once<K extends keyof OfficeEventMap>(
+    event: K,
+    fn: (...args: OfficeEventMap[K]) => void,
+  ): this {
+    this.emitter.once(event as string, fn)
+    return this
+  }
+
+  off<K extends keyof OfficeEventMap>(
+    event: K,
+    fn: (...args: OfficeEventMap[K]) => void,
+  ): this {
+    this.emitter.off(event as string, fn)
+    return this
+  }
+
+  emit<K extends keyof OfficeEventMap>(event: K, ...args: OfficeEventMap[K]): this {
+    this.emitter.emit(event as string, ...args)
+    return this
+  }
+}
+
+export const EventBus = new TypedEventBus()

@@ -34,26 +34,30 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
 
     const container = containerRef.current
 
-    // clientWidth pode ser 0 antes do layout em strict mode — usa innerWidth como fallback
-    const width = container.clientWidth || window.innerWidth
-    const height = container.clientHeight || window.innerHeight
+    // rAF garante layout calculado antes de ler clientWidth (#101)
+    const raf = requestAnimationFrame(() => {
+      if (gameRef.current) return
 
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: container,
-      width,
-      height,
-      backgroundColor: '#0d1117',
-      scene: [BootScene, PreloadScene, OfficeScene],
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
-      // UI React fica sobre o canvas via z-index — não precisa de transparência
-      transparent: false,
-    }
+      const width = container.clientWidth || window.innerWidth
+      const height = container.clientHeight || window.innerHeight
 
-    gameRef.current = new Phaser.Game(config)
+      const config: Phaser.Types.Core.GameConfig = {
+        type: Phaser.AUTO,
+        parent: container,
+        width,
+        height,
+        backgroundColor: '#0d1117',
+        scene: [BootScene, PreloadScene, OfficeScene],
+        scale: {
+          mode: Phaser.Scale.RESIZE,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
+        // UI React fica sobre o canvas via z-index — não precisa de transparência
+        transparent: false,
+      }
+
+      gameRef.current = new Phaser.Game(config)
+    })
 
     // Captura a cena ativa quando o Phaser emitir 'scene-ready'
     const onSceneReady = (scene: Phaser.Scene) => {
@@ -62,6 +66,7 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
     EventBus.on('scene-ready', onSceneReady)
 
     return () => {
+      cancelAnimationFrame(raf)
       EventBus.off('scene-ready', onSceneReady)
       gameRef.current?.destroy(true)
       gameRef.current = null
