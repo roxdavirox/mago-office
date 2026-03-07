@@ -41,10 +41,8 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
-      // Canvas transparente permite que o overlay React apareça por cima
+      // UI React fica sobre o canvas via z-index — não precisa de transparência
       transparent: false,
-      // Sem physics por enquanto — será adicionado na issue #91
-      physics: undefined,
     }
 
     gameRef.current = new Phaser.Game(config)

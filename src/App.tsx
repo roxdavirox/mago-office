@@ -19,6 +19,7 @@ export function App() {
   const { agents, users, isLoading, error, setZoneOverride, clearZoneOverride, retry } =
     useOfficeState()
   const canvasRef = useRef<HTMLDivElement>(null)
+  // Ref exposta para uso futuro na bridge EventBus (#93)
   const phaserRef = useRef<PhaserGameRef>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
