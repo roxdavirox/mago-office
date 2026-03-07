@@ -1,6 +1,8 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import Phaser from 'phaser'
 import { BootScene } from './scenes/BootScene'
+import { PreloadScene } from './scenes/PreloadScene'
+import { OfficeScene } from './scenes/OfficeScene'
 import { EventBus } from './EventBus'
 
 export interface PhaserGameRef {
@@ -42,7 +44,7 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
       width,
       height,
       backgroundColor: '#0d1117',
-      scene: [BootScene],
+      scene: [BootScene, PreloadScene, OfficeScene],
       scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
