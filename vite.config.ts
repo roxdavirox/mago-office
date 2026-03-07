@@ -6,6 +6,9 @@ const testConfig: UserConfig['test'] = {
   environment: 'happy-dom',
   globals: true,
   exclude: ['node_modules', 'dist', 'e2e'],
+  env: {
+    VITE_MOCK_MODE: 'false',
+  },
 }
 
 export default defineConfig({
@@ -15,6 +18,7 @@ export default defineConfig({
   server: {
     port: 3010,
     host: '0.0.0.0',
+    allowedHosts: ['office-dev.iae.wtf'],
   },
   preview: {
     port: 3010,
