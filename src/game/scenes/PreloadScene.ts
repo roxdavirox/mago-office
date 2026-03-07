@@ -28,6 +28,10 @@ export class PreloadScene extends Phaser.Scene {
       this.progressBg.destroy()
     })
 
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      console.warn(`[PreloadScene] asset não carregado: ${file.key} (${file.url})`)
+    })
+
     // ── Assets placeholder (serão substituídos em #89 / #90) ──────────────
     this.load.image('tile-placeholder', 'assets/agent-placeholder.png')
     this.load.tilemapTiledJSON('office-map', 'assets/office-map.json')
