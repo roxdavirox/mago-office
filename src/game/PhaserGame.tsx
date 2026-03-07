@@ -30,11 +30,17 @@ export const PhaserGame = forwardRef<PhaserGameRef>(function PhaserGame(_, ref) 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return
 
+    const container = containerRef.current
+
+    // clientWidth pode ser 0 antes do layout em strict mode — usa innerWidth como fallback
+    const width = container.clientWidth || window.innerWidth
+    const height = container.clientHeight || window.innerHeight
+
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      parent: containerRef.current,
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
+      parent: container,
+      width,
+      height,
       backgroundColor: '#0d1117',
       scene: [BootScene],
       scale: {

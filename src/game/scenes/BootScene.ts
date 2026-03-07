@@ -16,9 +16,6 @@ export class BootScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale
 
-    // Fundo
-    this.add.rectangle(0, 0, width, height, 0x0d1117).setOrigin(0)
-
     // Label de placeholder
     this.add
       .text(width / 2, height / 2, 'MAGO Office', {
