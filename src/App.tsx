@@ -11,12 +11,15 @@ import { HumanAvatar } from './components/HumanAvatar'
 import { OnlineUsersList } from './components/OnlineUsersList'
 import { AgentDetailPanel } from './components/AgentDetailPanel'
 import { getSocket } from './services/socket'
+import { PhaserGame } from './game/PhaserGame'
+import type { PhaserGameRef } from './game/PhaserGame'
 
 export function App() {
   const { status } = useSocket()
   const { agents, users, isLoading, error, setZoneOverride, clearZoneOverride, retry } =
     useOfficeState()
   const canvasRef = useRef<HTMLDivElement>(null)
+  const phaserRef = useRef<PhaserGameRef>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const mySocketId = getSocket().id ?? null
@@ -47,6 +50,10 @@ export function App() {
 
   return (
     <>
+      {/* Phaser canvas — camada base */}
+      <PhaserGame ref={phaserRef} />
+
+      {/* UI React — overlay sobre o canvas */}
       <OfficeCanvas
         connectionStatus={status}
         agentCount={agents.filter((a) => a.status !== 'offline').length}
