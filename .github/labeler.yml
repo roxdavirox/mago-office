@@ -1,0 +1,67 @@
+phaser:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/game/**'
+
+tilemap:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/game/scenes/**'
+      - 'public/assets/*.json'
+      - 'public/assets/office-map*'
+
+sprite:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/game/objects/**'
+
+bridge:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/game/EventBus.ts'
+
+frontend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/components/**'
+      - 'src/hooks/**'
+      - 'src/contexts/**'
+
+socket:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/services/socket.ts'
+
+animation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/game/objects/**'
+      - 'src/components/AgentAvatar*'
+      - 'src/components/SpeechBubble*'
+
+assets:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'public/assets/**'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+      - 'vite.config*'
+      - 'tsconfig*'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
+
+test:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.test.ts'
+      - '**/*.test.tsx'
+      - 'e2e/**'

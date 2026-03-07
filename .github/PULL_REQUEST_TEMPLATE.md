@@ -16,16 +16,23 @@
 
 Closes #<!-- número da issue -->
 
-## Checklist
+## Checklist geral
 
 - [ ] Código compila sem erros (`pnpm typecheck`)
 - [ ] Lint passa (`pnpm lint`)
 - [ ] Testes passando (`pnpm test`)
 - [ ] Build funciona (`pnpm build`)
-- [ ] Lógica de negócio testada
 - [ ] Sem `console.log` esquecidos
 
-## Screenshots / GIF (se aplicável)
+## Checklist — Phaser / Game Engine (preencher se aplicável)
+
+- [ ] Canvas responsivo (testado com resize)
+- [ ] Sem memory leak: listeners do EventBus removidos no cleanup
+- [ ] Sprites destroídos corretamente ao sair da cena
+- [ ] Mock mode (`VITE_MOCK_MODE=true`) continua funcionando
+- [ ] Performance: sem `update()` loop pesado desnecessário
+
+## Screenshots / GIF (obrigatório para mudanças visuais)
 
 <!-- Se mudança visual, adicione screenshot ou GIF -->
 
