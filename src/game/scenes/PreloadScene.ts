@@ -32,13 +32,14 @@ export class PreloadScene extends Phaser.Scene {
       console.warn(`[PreloadScene] asset não carregado: ${file.key} (${file.url})`)
     })
 
-    // ── Assets placeholder (serão substituídos em #89 / #90) ──────────────
-    this.load.image('tile-placeholder', 'assets/agent-placeholder.png')
+    // ── Tileset e mapa ────────────────────────────────────────────────────
+    // tile-placeholder referenciado pelo office-map.json como "tileset-placeholder"
+    this.load.image('tile-placeholder', 'assets/tileset-office.png')
     this.load.tilemapTiledJSON('office-map', 'assets/office-map.json')
 
-    // Spritesheet de agente — placeholder até #90
-    // frameWidth/frameHeight deve coincidir com o sprite real (16x16)
-    this.load.spritesheet('agent-sprite', 'assets/agent-placeholder.png', {
+    // ── Spritesheets ──────────────────────────────────────────────────────
+    // agent-sprite: 3 frames × 4 direções (down/left/right/up), 16×16 por frame
+    this.load.spritesheet('agent-sprite', 'assets/spritesheet-agent.png', {
       frameWidth: 16,
       frameHeight: 16,
     })
