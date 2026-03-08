@@ -10,6 +10,7 @@ import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../
 import { MOCK_AGENTS } from '../data/mock-agents'
 import { type Option, Some, None, fromNullable, unwrapOptionOr } from '@roxdavirox/fp-core/option'
 import { isString, isNotEmpty } from '@roxdavirox/fp-core/predicates'
+import { pick, merge } from '@roxdavirox/fp-core/object'
 
 const IS_MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true'
 
@@ -84,21 +85,19 @@ function agentIndex(id: string): number {
   return idx >= 0 ? idx : AGENT_IDS_ORDERED.length
 }
 
+const AGENT_BASE_KEYS = ['id', 'name', 'role', 'status'] as const
+type AgentBaseKey = (typeof AGENT_BASE_KEYS)[number]
+
 function enrichAgent(raw: RawAgent): AgentOfficeData {
   const zoneId = getAgentZone(raw.status, raw.current_task)
-  const position = getAgentPosition(zoneId, agentIndex(raw.id))
-  return {
-    id: raw.id,
-    name: raw.name,
-    role: raw.role,
-    status: raw.status,
+  return merge(pick<RawAgent, AgentBaseKey>([...AGENT_BASE_KEYS])(raw))({
     currentTask: raw.current_task,
     zoneId,
-    position,
+    position: getAgentPosition(zoneId, agentIndex(raw.id)),
     color: getAgentColor(raw.id),
-    speechText: None,
+    speechText: None as Option<string>,
     isManualOverride: false,
-  }
+  }) as AgentOfficeData
 }
 
 // ─── Reducer ────────────────────────────────────────────────────────────────
@@ -149,7 +148,7 @@ function reducer(state: OfficeState, action: Action): OfficeState {
             last_heartbeat: new Date().toISOString(),
             messages_count: 0,
           }
-          return { ...enrichAgent(raw), speechText: a.speechText }
+          return merge(enrichAgent(raw))({ speechText: a.speechText })
         }),
       }
     }
@@ -171,7 +170,7 @@ function reducer(state: OfficeState, action: Action): OfficeState {
     case 'AGENT_ZONE_OVERRIDE':
       return {
         ...state,
-        overrides: { ...state.overrides, [action.agentId]: action.override },
+        overrides: merge(state.overrides)({ [action.agentId]: action.override }),
       }
 
     case 'AGENT_ZONE_CLEAR_OVERRIDE': {
