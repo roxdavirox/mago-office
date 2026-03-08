@@ -8,7 +8,8 @@ import type {
 } from '../services/socket'
 import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../data/office-layout'
 import { MOCK_AGENTS } from '../data/mock-agents'
-import { type Option, Some, None } from '@roxdavirox/fp-core/option'
+import { type Option, Some, None, fromNullable, unwrapOptionOr } from '@roxdavirox/fp-core/option'
+import { isString, isNotEmpty } from '@roxdavirox/fp-core/predicates'
 
 const IS_MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true'
 
@@ -295,14 +296,14 @@ export function useOfficeState(): UseOfficeStateReturn {
         type: 'AGENT_STATUS_UPDATED',
         agentId: data.agentId,
         status: data.status,
-        lastAction: data.lastAction ?? data.currentTask ?? '',
+        lastAction: unwrapOptionOr('')(fromNullable(data.lastAction ?? data.currentTask)),
       })
     }
 
     const onBusMessage = (data: SocketBusMessage) => {
-      const text = (data.payload['content'] as string | undefined) ?? ''
-      if (!text) return
-      dispatch({ type: 'AGENT_SPEECH', agentId: data.from, text })
+      const content = data.payload['content']
+      if (!isString(content) || !isNotEmpty(content)) return
+      dispatch({ type: 'AGENT_SPEECH', agentId: data.from, text: content })
       scheduleSpeechClear(data.from)
     }
 
