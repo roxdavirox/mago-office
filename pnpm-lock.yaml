@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@roxdavirox/fp-core':
+        specifier: ^0.1.0
+        version: 0.1.0
       framer-motion:
         specifier: ^11.0.0
         version: 11.18.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -834,6 +837,10 @@ packages:
     resolution: {integrity: sha512-2HRCml6OztYXyJXAvdDXPKcawukWY2GpR5/nxKp4iBgiO3wcoEGkAaqctIbZcNB6KlUQBIqt8VYkNSj2397EfA==}
     cpu: [x64]
     os: [win32]
+
+  '@roxdavirox/fp-core@0.1.0':
+    resolution: {integrity: sha512-+vaL41iGdXz7cG+uIGlETBVoN8oSBu4sI5ZxqrRZkHdXqv+dWROwmqFx5QpBll7mT8W03FMBTDdU7HmgqXLBBA==}
+    engines: {node: '>=18'}
 
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
@@ -3260,6 +3267,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.59.0':
     optional: true
+
+  '@roxdavirox/fp-core@0.1.0': {}
 
   '@socket.io/component-emitter@3.1.2': {}
 

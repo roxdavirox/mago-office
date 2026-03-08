@@ -17,6 +17,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@roxdavirox/fp-core": "^0.1.0",
     "framer-motion": "^11.0.0",
     "phaser": "^3.90.0",
     "react": "^19.0.0",
