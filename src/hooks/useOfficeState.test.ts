@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
+import { Ok, Err } from '@roxdavirox/fp-core/result'
 import type { RawAgent } from './useOfficeState'
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
@@ -20,6 +21,12 @@ vi.mock('../services/socket', () => ({
   socket: mockSocket,
   connectSocket: vi.fn(),
 }))
+
+vi.mock('../services/agents', () => ({
+  fetchAgents: vi.fn(),
+}))
+
+import { fetchAgents } from '../services/agents'
 
 const mockAgents: RawAgent[] = [
   {
@@ -61,17 +68,10 @@ beforeEach(() => {
   mockSocket.on.mockClear()
   mockSocket.off.mockClear()
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockAgents),
-    })
-  )
+  vi.mocked(fetchAgents).mockResolvedValue(Ok(mockAgents))
 })
 
 afterEach(() => {
-  vi.unstubAllGlobals()
   vi.useRealTimers()
 })
 
@@ -153,7 +153,7 @@ describe('useOfficeState — initial load', () => {
 
 describe('useOfficeState — API error', () => {
   it('sets error and exits loading when fetch fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    vi.mocked(fetchAgents).mockResolvedValue(Err('HTTP 500'))
 
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -347,19 +347,13 @@ describe('useOfficeState — zone override', () => {
 
 describe('useOfficeState — retry', () => {
   it('retry re-triggers the fetch and clears the error', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+    vi.mocked(fetchAgents).mockResolvedValue(Err('HTTP 503'))
 
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.error).toMatch(/503/))
 
-    // Switch mock to succeed on second call
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockAgents),
-      })
-    )
+    // Switch mock to succeed on next call
+    vi.mocked(fetchAgents).mockResolvedValue(Ok(mockAgents))
 
     act(() => {
       result.current.retry()
@@ -371,20 +365,17 @@ describe('useOfficeState — retry', () => {
   })
 
   it('retry sets isLoading=true before fetch resolves', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+    vi.mocked(fetchAgents).mockResolvedValue(Err('HTTP 503'))
 
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.error).toMatch(/503/))
 
     // Use a pending promise to freeze the fetch mid-flight
-    let resolveFetch!: (v: unknown) => void
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockReturnValue(
-        new Promise((res) => {
-          resolveFetch = res
-        })
-      )
+    let resolveAgents!: (v: ReturnType<typeof Ok<typeof mockAgents>>) => void
+    vi.mocked(fetchAgents).mockReturnValue(
+      new Promise((res) => {
+        resolveAgents = res
+      })
     )
 
     act(() => {
@@ -394,7 +385,7 @@ describe('useOfficeState — retry', () => {
     expect(result.current.isLoading).toBe(true)
 
     // Resolve to avoid lingering promise
-    resolveFetch({ ok: true, json: () => Promise.resolve(mockAgents) })
+    resolveAgents(Ok(mockAgents))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
   })
 })
