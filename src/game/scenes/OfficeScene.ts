@@ -28,6 +28,7 @@ export type ZoneId =
 export class OfficeScene extends Phaser.Scene {
   private zoneRects = new Map<string, Phaser.Geom.Rectangle>()
   private agentSprites = new Map<string, AgentSprite>()
+  private readonly onAgentsUpdated = (agents: AgentOfficeData[]) => this.syncAgents(agents)
   wallsLayer: Phaser.Tilemaps.TilemapLayer | null = null
   furnitureLayer: Phaser.Tilemaps.TilemapLayer | null = null
 
@@ -53,9 +54,9 @@ export class OfficeScene extends Phaser.Scene {
     this.setupCamera(map)
     registerAgentAnimations(this)
 
-    EventBus.on('agents-updated', this.syncAgents, this)
+    EventBus.on('agents-updated', this.onAgentsUpdated)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      EventBus.off('agents-updated', this.syncAgents, this)
+      EventBus.off('agents-updated', this.onAgentsUpdated)
     })
 
     EventBus.emit('scene-ready', this)
