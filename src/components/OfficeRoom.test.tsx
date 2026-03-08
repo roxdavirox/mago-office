@@ -13,6 +13,10 @@ const mockZone: Zone = {
   height: 25,
   color: '#1a1a2e',
   description: 'Test zone',
+  worldX: 16,
+  worldY: 32,
+  worldW: 160,
+  worldH: 192,
 }
 
 describe('OfficeRoom', () => {
