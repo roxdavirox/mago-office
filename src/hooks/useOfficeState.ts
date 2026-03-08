@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useCallback, useRef, useState } from 'react'
+import { fetchAgents } from '../services/agents'
 import { getSocket } from '../services/socket'
 import type {
   AgentStatus as SocketAgentStatus,
@@ -215,8 +216,6 @@ const INITIAL_STATE: OfficeState = {
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
-const BACKEND_URL = import.meta.env.VITE_MAGO_BACKEND_URL ?? 'http://localhost:3002'
-const AGENTS_URL = `${BACKEND_URL}/api/dashboard/agents`
 
 export interface UseOfficeStateReturn extends Omit<OfficeState, 'overrides'> {
   /** Apply a manual position override for an agent (drag-and-drop) */
@@ -263,27 +262,21 @@ export function useOfficeState(): UseOfficeStateReturn {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
 
     dispatch({ type: 'FETCH_START' })
 
-    fetch(AGENTS_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<RawAgent[]>
+    fetchAgents(controller.signal)
+      .then((result) => {
+        if (result.ok) dispatch({ type: 'AGENTS_LOADED', agents: result.value })
+        else dispatch({ type: 'FETCH_ERROR', error: result.error })
       })
-      .then((agents) => {
-        if (!cancelled) dispatch({ type: 'AGENTS_LOADED', agents })
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : String(err)
-          dispatch({ type: 'FETCH_ERROR', error: msg })
-        }
+      .catch(() => {
+        // AbortError — cancelamento intencional, ignorar
       })
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [retryCount])
 
