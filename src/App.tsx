@@ -13,13 +13,16 @@ import { AgentDetailPanel } from './components/AgentDetailPanel'
 import { getSocket } from './services/socket'
 import { PhaserGame } from './game/PhaserGame'
 import type { PhaserGameRef } from './game/PhaserGame'
+import { usePhaserBridge } from './hooks/usePhaserBridge'
 
 export function App() {
   const { status } = useSocket()
   const { agents, users, isLoading, error, setZoneOverride, clearZoneOverride, retry } =
     useOfficeState()
+
+  // Bridge React → Phaser: emite agents-updated via EventBus (#93)
+  usePhaserBridge(agents)
   const canvasRef = useRef<HTMLDivElement>(null)
-  // Ref exposta para uso futuro na bridge EventBus (#93)
   const phaserRef = useRef<PhaserGameRef>(null)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
