@@ -1,3 +1,5 @@
+import { pipe } from '@roxdavirox/fp-core'
+
 /**
  * Color palette for human avatars.
  * Generated via userId hash — uniform distribution.
@@ -13,21 +15,21 @@ const AVATAR_PALETTE = [
   '#f43f5e', // rose
 ]
 
+const charCodes = (s: string): number[] => Array.from(s).map((c) => c.charCodeAt(0))
+const foldHash = (codes: number[]): number => codes.reduce((h, c) => ((h * 31 + c) >>> 0), 0)
+
 /** Returns a stable color for a given userId. */
-export function hashColor(userId: string): string {
-  let hash = 0
-  for (let i = 0; i < userId.length; i++) {
-    hash = (hash * 31 + userId.charCodeAt(i)) >>> 0
-  }
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]
-}
+export const hashColor = (userId: string): string =>
+  pipe(userId, charCodes, foldHash, (h) => AVATAR_PALETTE[h % AVATAR_PALETTE.length])
+
+const words = (s: string): string[] => s.trim().split(/\s+/)
+const abbreviate = (parts: string[]): string =>
+  parts.length === 1
+    ? parts[0].slice(0, 2).toUpperCase()
+    : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 
 /** Returns the initials (up to 2 letters) of a name. */
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
+export const initials = (name: string): string => pipe(name, words, abbreviate)
 
 /**
  * Converts a pixel position (relative to the container) to percentage (0–100).
