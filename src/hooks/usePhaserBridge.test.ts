@@ -33,10 +33,8 @@ const makeAgent = (id: string, status = 'working', zoneId = 'dev-zone'): AgentOf
   status,
   currentTask: '',
   zoneId,
-  position: { x: 50, y: 50 },
   color: '#8b5cf6',
   speechText: None,
-  isManualOverride: false,
 })
 
 describe('usePhaserBridge', () => {

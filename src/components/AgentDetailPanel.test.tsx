@@ -52,10 +52,8 @@ const mockAgent: AgentOfficeData = {
   status: 'working',
   currentTask: 'Reviewing PR #44',
   zoneId: 'dev-zone',
-  position: { x: 50, y: 50 },
   color: '#8b5cf6',
   speechText: None,
-  isManualOverride: false,
 }
 
 describe('AgentDetailPanel', () => {
