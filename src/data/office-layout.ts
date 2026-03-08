@@ -1,3 +1,6 @@
+import { pipe } from '@roxdavirox/fp-core'
+import { type Option, Some, None, fromNullable, mapOption, unwrapOptionOr } from '@roxdavirox/fp-core/option'
+
 export interface Zone {
   id: string
   label: string
@@ -97,6 +100,8 @@ export interface AgentPosition {
   y: number
 }
 
+const DEFAULT_POSITION: AgentPosition = { x: 50, y: 50 }
+
 /**
  * Calculates the absolute position (% of canvas) of an agent within its zone,
  * using the agent index to avoid overlap.
@@ -104,20 +109,52 @@ export interface AgentPosition {
  * @param zoneId      ID of the zone where the agent is located
  * @param agentIndex  0-based agent index (0=agent-1, 1=agent-2, 2=agent-3)
  */
-export function getAgentPosition(zoneId: string, agentIndex: number): AgentPosition {
-  const zone = ZONE_BY_ID[zoneId]
-  if (!zone) return { x: 50, y: 50 }
-
-  const offset = AGENT_ZONE_OFFSETS[agentIndex] ?? DEFAULT_OFFSET
-
-  return {
-    x: zone.x + (zone.width * offset.x) / 100,
-    y: zone.y + (zone.height * offset.y) / 100,
-  }
-}
+export const getAgentPosition = (zoneId: string, agentIndex: number): AgentPosition =>
+  pipe(
+    fromNullable(ZONE_BY_ID[zoneId]),
+    mapOption((zone) => {
+      const offset = AGENT_ZONE_OFFSETS[agentIndex] ?? DEFAULT_OFFSET
+      return {
+        x: zone.x + (zone.width * offset.x) / 100,
+        y: zone.y + (zone.height * offset.y) / 100,
+      }
+    }),
+    unwrapOptionOr(DEFAULT_POSITION),
+  )
 
 // Re-exported from constants/agent to maintain compatibility with existing imports
 export { AGENT_COLORS, DEFAULT_AGENT_COLOR, getAgentColor } from '../constants/agent'
+
+// ─── getAgentZone helpers ────────────────────────────────────────────────────
+
+/** Treats null, undefined and empty string as None. */
+const fromNonEmpty = (s: string | null | undefined): Option<string> => (s ? Some(s) : None)
+
+const STATUS_ZONE: Record<string, string> = {
+  idle: 'coffee-corner',
+  offline: 'lobby',
+  blocked: 'lobby',
+}
+
+const actionToZone = (action: string): string => {
+  if (action.includes('review') || action.includes('aprovando') || action.includes('revisando'))
+    return 'review-room'
+  if (
+    action.includes('plan') ||
+    action.includes('task') ||
+    action.includes('sprint') ||
+    action.includes('backlog')
+  )
+    return 'planning-board'
+  if (
+    action.includes('analyz') ||
+    action.includes('analis') ||
+    action.includes('inspect') ||
+    action.includes('debug')
+  )
+    return 'analysis-area'
+  return 'dev-zone'
+}
 
 /**
  * Statuses supported by the MAGO backend:
@@ -127,36 +164,11 @@ export { AGENT_COLORS, DEFAULT_AGENT_COLOR, getAgentColor } from '../constants/a
  *   working   → zone based on lastAction
  *   thinking  → zone based on lastAction
  *
- * Other values (e.g. undefined, null, unknown) → lobby (safe default)
+ * Other values (e.g. undefined, null, empty string) → lobby (safe default)
  */
-export function getAgentZone(status: string | null | undefined, lastAction = ''): string {
-  if (!status) return 'lobby'
-
-  if (status === 'idle') return 'coffee-corner'
-  if (status === 'offline' || status === 'blocked') return 'lobby'
-
-  // For working/thinking: use lastAction to refine the zone
-  const action = lastAction.toLowerCase()
-
-  if (action.includes('review') || action.includes('aprovando') || action.includes('revisando')) {
-    return 'review-room'
-  }
-  if (
-    action.includes('plan') ||
-    action.includes('task') ||
-    action.includes('sprint') ||
-    action.includes('backlog')
-  ) {
-    return 'planning-board'
-  }
-  if (
-    action.includes('analyz') ||
-    action.includes('analis') ||
-    action.includes('inspect') ||
-    action.includes('debug')
-  ) {
-    return 'analysis-area'
-  }
-
-  return 'dev-zone'
-}
+export const getAgentZone = (status: string | null | undefined, lastAction = ''): string =>
+  pipe(
+    fromNonEmpty(status),
+    mapOption((s) => STATUS_ZONE[s] ?? actionToZone(lastAction.toLowerCase())),
+    unwrapOptionOr('lobby'),
+  )
