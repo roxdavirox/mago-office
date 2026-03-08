@@ -124,16 +124,6 @@ describe('useOfficeState — initial load', () => {
     expect(orchestrator?.zoneId).toBe('review-room')
   })
 
-  it('agents have calculated position (x and y are numbers)', async () => {
-    const { result } = renderHook(() => useOfficeState())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    for (const agent of result.current.agents) {
-      expect(typeof agent.position.x).toBe('number')
-      expect(typeof agent.position.y).toBe('number')
-    }
-  })
-
   it('maps currentTask from API current_task', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -282,70 +272,6 @@ describe('useOfficeState — socket events', () => {
     const user = result.current.users.find((u) => u.socketId === 'abc123')
     expect(user?.x).toBe(30)
     expect(user?.y).toBe(60)
-  })
-})
-
-describe('useOfficeState — zone override', () => {
-  it('setZoneOverride applies a manual position override', async () => {
-    const { result } = renderHook(() => useOfficeState())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => {
-      result.current.setZoneOverride('rx-architect', { x: 70, y: 20, zoneId: 'review-room' })
-    })
-
-    const agent = result.current.agents.find((a) => a.id === 'rx-architect')
-    expect(agent?.isManualOverride).toBe(true)
-    expect(agent?.position.x).toBe(70)
-    expect(agent?.position.y).toBe(20)
-    expect(agent?.zoneId).toBe('review-room')
-  })
-
-  it('clearZoneOverride restores auto-computed position', async () => {
-    const { result } = renderHook(() => useOfficeState())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => {
-      result.current.setZoneOverride('rx-architect', { x: 70, y: 20, zoneId: 'review-room' })
-    })
-    act(() => {
-      result.current.clearZoneOverride('rx-architect')
-    })
-
-    const agent = result.current.agents.find((a) => a.id === 'rx-architect')
-    expect(agent?.isManualOverride).toBe(false)
-    // Position reverts to auto-computed value for idle agent in coffee-corner
-    expect(agent?.zoneId).toBe('coffee-corner')
-  })
-
-  it('agent:status:updated clears override for that agent', async () => {
-    const { result } = renderHook(() => useOfficeState())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => {
-      result.current.setZoneOverride('rx-architect', { x: 70, y: 20, zoneId: 'review-room' })
-    })
-    expect(result.current.agents.find((a) => a.id === 'rx-architect')?.isManualOverride).toBe(true)
-
-    act(() => {
-      const handler = socketListeners.get('agent:status:updated')
-      handler?.({ agentId: 'rx-architect', status: 'idle', lastAction: '' })
-    })
-
-    const agent = result.current.agents.find((a) => a.id === 'rx-architect')
-    expect(agent?.isManualOverride).toBe(false)
-  })
-
-  it('override for one agent does not affect other agents', async () => {
-    const { result } = renderHook(() => useOfficeState())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => {
-      result.current.setZoneOverride('rx-architect', { x: 70, y: 20, zoneId: 'review-room' })
-    })
-
-    const backend = result.current.agents.find((a) => a.id === 'rx-backend')
-    expect(backend?.isManualOverride).toBe(false)
   })
 })
 

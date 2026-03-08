@@ -6,7 +6,7 @@ import type {
   BusMessage as SocketBusMessage,
   OfficeUser,
 } from '../services/socket'
-import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../data/office-layout'
+import { getAgentZone, getAgentColor } from '../data/office-layout'
 import { MOCK_AGENTS } from '../data/mock-agents'
 import { type Option, Some, None, fromNullable, unwrapOptionOr } from '@roxdavirox/fp-core/option'
 import { isString, isNotEmpty } from '@roxdavirox/fp-core/predicates'
@@ -28,7 +28,7 @@ export interface RawAgent {
   messages_count: number
 }
 
-/** Agent enriched with calculated position data */
+/** Agent enriched with zone data */
 export interface AgentOfficeData {
   id: string
   name: string
@@ -37,13 +37,9 @@ export interface AgentOfficeData {
   /** current_task from the API — equivalent to lastAction */
   currentTask: string
   zoneId: string
-  /** Absolute position as % of the canvas */
-  position: { x: number; y: number }
   color: string
   /** Current SpeechBubble text (None = hidden) */
   speechText: Option<string>
-  /** True when position was manually overridden by drag (visual only) */
-  isManualOverride: boolean
 }
 
 export interface UserOfficeData {
@@ -54,36 +50,14 @@ export interface UserOfficeData {
   y: number
 }
 
-/** A manual zone override for a single agent */
-export interface ZoneOverride {
-  /** Canvas-relative X position in % */
-  x: number
-  /** Canvas-relative Y position in % */
-  y: number
-  zoneId: string
-}
-
 export interface OfficeState {
   agents: AgentOfficeData[]
   users: UserOfficeData[]
   isLoading: boolean
   error: string | null
-  /** Manual position overrides by agentId — cleared on next agent:status:updated */
-  overrides: Record<string, ZoneOverride>
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-const AGENT_IDS_ORDERED = Object.keys(AGENT_COLORS) // ['rx-architect', 'rx-backend', 'rx-orchestrator']
-
-/**
- * Determines the stable agent index for anti-overlap offset calculation.
- * Uses the id position in the ordered list; unknown ids go to the end.
- */
-function agentIndex(id: string): number {
-  const idx = AGENT_IDS_ORDERED.indexOf(id)
-  return idx >= 0 ? idx : AGENT_IDS_ORDERED.length
-}
 
 const AGENT_BASE_KEYS = ['id', 'name', 'role', 'status'] as const
 type AgentBaseKey = (typeof AGENT_BASE_KEYS)[number]
@@ -93,10 +67,8 @@ function enrichAgent(raw: RawAgent): AgentOfficeData {
   return merge(pick<RawAgent, AgentBaseKey>([...AGENT_BASE_KEYS])(raw))({
     currentTask: raw.current_task,
     zoneId,
-    position: getAgentPosition(zoneId, agentIndex(raw.id)),
     color: getAgentColor(raw.id),
     speechText: None as Option<string>,
-    isManualOverride: false,
   }) as AgentOfficeData
 }
 
@@ -108,8 +80,6 @@ type Action =
   | { type: 'AGENT_STATUS_UPDATED'; agentId: string; status: string; lastAction: string }
   | { type: 'AGENT_SPEECH'; agentId: string; text: string }
   | { type: 'AGENT_SPEECH_CLEAR'; agentId: string }
-  | { type: 'AGENT_ZONE_OVERRIDE'; agentId: string; override: ZoneOverride }
-  | { type: 'AGENT_ZONE_CLEAR_OVERRIDE'; agentId: string }
   | { type: 'USER_JOINED'; user: OfficeUser }
   | { type: 'USER_LEFT'; socketId: string }
   | { type: 'USER_MOVED'; socketId: string; x: number; y: number }
@@ -129,13 +99,8 @@ function reducer(state: OfficeState, action: Action): OfficeState {
       }
 
     case 'AGENT_STATUS_UPDATED': {
-      // Clear any manual override for this agent — backend has the real zone now
-      const overrides = { ...state.overrides }
-      delete overrides[action.agentId]
-
       return {
         ...state,
-        overrides,
         agents: state.agents.map((a) => {
           if (a.id !== action.agentId) return a
           const raw: RawAgent = {
@@ -166,18 +131,6 @@ function reducer(state: OfficeState, action: Action): OfficeState {
         ...state,
         agents: state.agents.map((a) => (a.id === action.agentId ? { ...a, speechText: None } : a)),
       }
-
-    case 'AGENT_ZONE_OVERRIDE':
-      return {
-        ...state,
-        overrides: merge(state.overrides)({ [action.agentId]: action.override }),
-      }
-
-    case 'AGENT_ZONE_CLEAR_OVERRIDE': {
-      const overrides = { ...state.overrides }
-      delete overrides[action.agentId]
-      return { ...state, overrides }
-    }
 
     case 'USER_JOINED':
       return {
@@ -212,17 +165,11 @@ const INITIAL_STATE: OfficeState = {
   users: [],
   isLoading: true,
   error: null,
-  overrides: {},
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
-
-export interface UseOfficeStateReturn extends Omit<OfficeState, 'overrides'> {
-  /** Apply a manual position override for an agent (drag-and-drop) */
-  setZoneOverride: (agentId: string, override: ZoneOverride) => void
-  /** Remove a manual override, restoring the auto-computed position */
-  clearZoneOverride: (agentId: string) => void
+export interface UseOfficeStateReturn extends OfficeState {
   /** Re-trigger the agents REST fetch (clears error and sets isLoading) */
   retry: () => void
 }
@@ -243,14 +190,6 @@ export function useOfficeState(): UseOfficeStateReturn {
       speechTimers.current.delete(agentId)
     }, 5000)
     speechTimers.current.set(agentId, timer)
-  }, [])
-
-  const setZoneOverride = useCallback((agentId: string, override: ZoneOverride) => {
-    dispatch({ type: 'AGENT_ZONE_OVERRIDE', agentId, override })
-  }, [])
-
-  const clearZoneOverride = useCallback((agentId: string) => {
-    dispatch({ type: 'AGENT_ZONE_CLEAR_OVERRIDE', agentId })
   }, [])
 
   // retry manual — usado pelo botão da UI; fetchAgents já faz 3 tentativas automáticas
@@ -344,25 +283,11 @@ export function useOfficeState(): UseOfficeStateReturn {
     }
   }, [])
 
-  // Apply overrides to agent positions before returning
-  const agents = state.agents.map((a) => {
-    const ov = state.overrides[a.id]
-    if (!ov) return a
-    return {
-      ...a,
-      position: { x: ov.x, y: ov.y },
-      zoneId: ov.zoneId,
-      isManualOverride: true,
-    }
-  })
-
   return {
-    agents,
+    agents: state.agents,
     users: state.users,
     isLoading: state.isLoading,
     error: state.error,
-    setZoneOverride,
-    clearZoneOverride,
     retry,
   }
 }

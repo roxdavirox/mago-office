@@ -1,104 +1,43 @@
-import { useRef, useState, useCallback } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { useRef } from 'react'
 import { useSocket } from './hooks/useSocket'
 import { useOfficeState } from './hooks/useOfficeState'
-import type { AgentOfficeData } from './hooks/useOfficeState'
-import type { ZoneOverride } from './hooks/useOfficeState'
-import { OfficeCanvas } from './components/OfficeCanvas'
 import { OfficeOverlay } from './components/OfficeOverlay'
-import { AgentAvatar } from './components/AgentAvatar'
 import { HumanAvatar } from './components/HumanAvatar'
 import { OnlineUsersList } from './components/OnlineUsersList'
-import { AgentDetailPanel } from './components/AgentDetailPanel'
 import { getSocket } from './services/socket'
 import { PhaserGame } from './game/PhaserGame'
 import type { PhaserGameRef } from './game/PhaserGame'
 import { usePhaserBridge } from './hooks/usePhaserBridge'
 
 export function App() {
-  const { status } = useSocket()
-  const { agents, users, isLoading, error, setZoneOverride, clearZoneOverride, retry } =
-    useOfficeState()
-
-  // Bridge React → Phaser: emite agents-updated via EventBus (#93)
+  useSocket()
+  const { agents, users, isLoading, error, retry } = useOfficeState()
   usePhaserBridge(agents)
-  const canvasRef = useRef<HTMLDivElement>(null)
+
+  const overlayRef = useRef<HTMLDivElement>(null)
   const phaserRef = useRef<PhaserGameRef>(null)
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const mySocketId = getSocket().id ?? null
-
-  const selectedAgent = agents.find((a) => a.id === selectedAgentId) ?? null
-
-  const handleAgentClick = useCallback((agent: AgentOfficeData) => {
-    setSelectedAgentId((prev) => (prev === agent.id ? null : agent.id))
-  }, [])
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedAgentId(null)
-  }, [])
-
-  const handleZoneOverride = useCallback(
-    (agentId: string, override: ZoneOverride) => {
-      setZoneOverride(agentId, override)
-    },
-    [setZoneOverride]
-  )
-
-  const handleClearOverride = useCallback(
-    (agentId: string) => {
-      clearZoneOverride(agentId)
-    },
-    [clearZoneOverride]
-  )
 
   return (
     <>
       {/* Phaser canvas — camada base */}
       <PhaserGame ref={phaserRef} />
 
-      {/* UI React — overlay sobre o canvas */}
-      <OfficeCanvas
-        connectionStatus={status}
-        agentCount={agents.filter((a) => a.status !== 'offline').length}
-        humanCount={users.length}
-        canvasRef={canvasRef}
-      >
-        {agents.map((agent) => (
-          <AgentAvatar
-            key={agent.id}
-            agent={agent}
-            onClick={handleAgentClick}
-            isSelected={agent.id === selectedAgentId}
-            canvasRef={canvasRef}
-            onZoneOverride={handleZoneOverride}
-            onClearOverride={handleClearOverride}
-          />
-        ))}
+      {/* React overlay — human avatars e feedback de carregamento */}
+      <div ref={overlayRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {users.map((user) => (
           <HumanAvatar
             key={user.socketId}
             user={user}
             isMe={user.socketId === mySocketId}
-            canvasRef={canvasRef}
+            canvasRef={overlayRef}
           />
         ))}
-
-        {/* Loading / error overlay — sits inside the canvas */}
         <OfficeOverlay isLoading={isLoading} error={error} onRetry={retry} />
-      </OfficeCanvas>
+      </div>
 
       <OnlineUsersList users={users} mySocketId={mySocketId} />
-
-      <AnimatePresence>
-        {selectedAgent && (
-          <AgentDetailPanel
-            key={selectedAgent.id}
-            agent={selectedAgent}
-            onClose={handleClosePanel}
-          />
-        )}
-      </AnimatePresence>
     </>
   )
 }
