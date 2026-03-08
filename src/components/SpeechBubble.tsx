@@ -1,8 +1,9 @@
 import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { type Option, isSome } from '@roxdavirox/fp-core/option'
 
 interface SpeechBubbleProps {
-  text: string | null
+  text: Option<string>
   color: string
 }
 
@@ -53,20 +54,24 @@ const variants = {
 }
 
 export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBubbleProps) {
-  const truncated = text && text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH)}…` : text
+  const content = isSome(text)
+    ? text.value.length > MAX_LENGTH
+      ? `${text.value.slice(0, MAX_LENGTH)}…`
+      : text.value
+    : null
 
   return (
     <AnimatePresence>
-      {truncated && (
+      {content && (
         <motion.div
-          key={truncated}
+          key={content}
           variants={variants}
           initial="hidden"
           animate="visible"
           exit="exit"
           style={{ ...STYLES.bubble, border: `1px solid ${color}80` }}
         >
-          {truncated}
+          {content}
           {/* Downward-pointing arrow */}
           <span
             data-testid="speech-arrow"

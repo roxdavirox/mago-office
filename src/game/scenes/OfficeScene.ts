@@ -3,6 +3,7 @@ import { EventBus } from '../EventBus'
 import { AgentSprite, registerAgentAnimations } from '../objects/AgentSprite'
 import type { AgentOfficeData } from '../../hooks/useOfficeState'
 import { getAgentColor } from '../../constants/agent'
+import { type Option, Some, None, isSome } from '@roxdavirox/fp-core/option'
 
 /**
  * OfficeScene — cena principal do jogo (#88 → #92).
@@ -68,7 +69,8 @@ export class OfficeScene extends Phaser.Scene {
 
     for (const agent of agents) {
       seen.add(agent.id)
-      const center = this.getZoneCenterWorld(agent.zoneId) ?? { x: 272, y: 280 }
+      const centerOpt = this.getZoneCenterWorld(agent.zoneId)
+      const center = isSome(centerOpt) ? centerOpt.value : { x: 272, y: 280 }
 
       let sprite = this.agentSprites.get(agent.id)
       if (!sprite) {
@@ -97,10 +99,10 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   /** Retorna o centro em pixels de uma zona. */
-  getZoneCenterWorld(zoneId: string): { x: number; y: number } | null {
+  getZoneCenterWorld(zoneId: string): Option<{ x: number; y: number }> {
     const rect = this.zoneRects.get(zoneId)
-    if (!rect) return null
-    return { x: rect.centerX, y: rect.centerY }
+    if (!rect) return None
+    return Some({ x: rect.centerX, y: rect.centerY })
   }
 
   private parseZoneMarkers(map: Phaser.Tilemaps.Tilemap) {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
+import { None, Some } from '@roxdavirox/fp-core/option'
 import { AgentAvatar } from './AgentAvatar'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
@@ -53,7 +54,7 @@ const mockAgent: AgentOfficeData = {
   zoneId: 'coffee-corner',
   position: { x: 30, y: 50 },
   color: '#8b5cf6',
-  speechText: null,
+  speechText: None,
   isManualOverride: false,
 }
 
@@ -86,13 +87,13 @@ describe('AgentAvatar', () => {
     expect(onClick).toHaveBeenCalledWith(mockAgent)
   })
 
-  it('does not render SpeechBubble when speechText is null', () => {
+  it('does not render SpeechBubble when speechText is None', () => {
     render(<AgentAvatar agent={mockAgent} />)
     expect(screen.queryByText(/waiting/i)).toBeNull()
   })
 
-  it('renders SpeechBubble when speechText is set', () => {
-    render(<AgentAvatar agent={{ ...mockAgent, speechText: 'Analyzing code' }} />)
+  it('renders SpeechBubble when speechText is Some', () => {
+    render(<AgentAvatar agent={{ ...mockAgent, speechText: Some('Analyzing code') }} />)
     expect(screen.getByText('Analyzing code')).toBeTruthy()
   })
 

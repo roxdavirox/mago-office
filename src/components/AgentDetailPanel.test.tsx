@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { None } from '@roxdavirox/fp-core/option'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
@@ -53,7 +54,7 @@ const mockAgent: AgentOfficeData = {
   zoneId: 'dev-zone',
   position: { x: 50, y: 50 },
   color: '#8b5cf6',
-  speechText: null,
+  speechText: None,
   isManualOverride: false,
 }
 
