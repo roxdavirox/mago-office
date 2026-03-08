@@ -46,7 +46,7 @@ export async function fetchAgents(signal: AbortSignal): Promise<Result<RawAgent[
 
   const result = await retry(RETRY_ATTEMPTS, RETRY_DELAY_MS, RETRY_BACKOFF)(attempt)
 
-  if (result.ok) return Ok(result.value)
+  if (result.ok) return Ok(result.value as RawAgent[])
 
   // AbortError = cancelamento intencional — propaga para caller ignorar
   if (result.error instanceof DOMException && result.error.name === 'AbortError') {

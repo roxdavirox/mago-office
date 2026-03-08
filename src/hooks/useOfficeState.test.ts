@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { Ok, Err } from '@roxdavirox/fp-core/result'
+import { Ok, Err, type Result } from '@roxdavirox/fp-core/result'
 import type { RawAgent } from './useOfficeState'
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
@@ -371,10 +371,10 @@ describe('useOfficeState — retry', () => {
     await waitFor(() => expect(result.current.error).toMatch(/503/))
 
     // Use a pending promise to freeze the fetch mid-flight
-    let resolveAgents!: (v: ReturnType<typeof Ok<typeof mockAgents>>) => void
+    let resolveAgents!: (v: Result<RawAgent[], string>) => void
     vi.mocked(fetchAgents).mockReturnValue(
-      new Promise((res) => {
-        resolveAgents = res
+      new Promise<Result<RawAgent[], string>>((res) => {
+        resolveAgents = res as typeof resolveAgents
       })
     )
 
