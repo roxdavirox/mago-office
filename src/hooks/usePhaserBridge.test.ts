@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { None } from '@roxdavirox/fp-core/option'
 
 // vi.hoisted garante que mockBus existe antes do hoist de vi.mock
 const { mockBus, listeners } = vi.hoisted(() => {
@@ -34,7 +35,7 @@ const makeAgent = (id: string, status = 'working', zoneId = 'dev-zone'): AgentOf
   zoneId,
   position: { x: 50, y: 50 },
   color: '#8b5cf6',
-  speechText: null,
+  speechText: None,
   isManualOverride: false,
 })
 

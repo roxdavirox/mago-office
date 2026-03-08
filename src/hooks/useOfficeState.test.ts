@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { Ok, Err, type Result } from '@roxdavirox/fp-core/result'
+import { Some, isSome, isNone } from '@roxdavirox/fp-core/option'
 import type { RawAgent } from './useOfficeState'
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
@@ -141,12 +142,12 @@ describe('useOfficeState — initial load', () => {
     expect(backend?.currentTask).toBe('implementing feature X')
   })
 
-  it('speechText starts as null', async () => {
+  it('speechText starts as None', async () => {
     const { result } = renderHook(() => useOfficeState())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     for (const agent of result.current.agents) {
-      expect(agent.speechText).toBeNull()
+      expect(isNone(agent.speechText)).toBe(true)
     }
   })
 })
@@ -188,7 +189,7 @@ describe('useOfficeState — socket events', () => {
     })
 
     const backend = result.current.agents.find((a) => a.id === 'rx-backend')
-    expect(backend?.speechText).toBe('Starting analysis')
+    expect(backend?.speechText).toEqual(Some('Starting analysis'))
   })
 
   it('bus:message without content does not change speechText', async () => {
@@ -201,7 +202,8 @@ describe('useOfficeState — socket events', () => {
     })
 
     const backend = result.current.agents.find((a) => a.id === 'rx-backend')
-    expect(backend?.speechText).toBeNull()
+    expect(backend).toBeDefined()
+    expect(isSome(backend!.speechText)).toBe(false)
   })
 
   it('clears speechText after 5 seconds', async () => {
@@ -216,13 +218,15 @@ describe('useOfficeState — socket events', () => {
       handler?.({ from: 'rx-backend', payload: { content: 'Working...' } })
     })
 
-    expect(result.current.agents.find((a) => a.id === 'rx-backend')?.speechText).toBe('Working...')
+    expect(result.current.agents.find((a) => a.id === 'rx-backend')?.speechText).toEqual(Some('Working...'))
 
     act(() => {
       vi.advanceTimersByTime(5000)
     })
 
-    expect(result.current.agents.find((a) => a.id === 'rx-backend')?.speechText).toBeNull()
+    const backendAfter = result.current.agents.find((a) => a.id === 'rx-backend')
+    expect(backendAfter).toBeDefined()
+    expect(isSome(backendAfter!.speechText)).toBe(false)
   })
 
   it('adds user when office:user:joined is received', async () => {

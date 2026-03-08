@@ -8,6 +8,7 @@ import type {
 } from '../services/socket'
 import { getAgentZone, getAgentPosition, getAgentColor, AGENT_COLORS } from '../data/office-layout'
 import { MOCK_AGENTS } from '../data/mock-agents'
+import { type Option, Some, None } from '@roxdavirox/fp-core/option'
 
 const IS_MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true'
 
@@ -37,8 +38,8 @@ export interface AgentOfficeData {
   /** Absolute position as % of the canvas */
   position: { x: number; y: number }
   color: string
-  /** Current SpeechBubble text (null = hidden) */
-  speechText: string | null
+  /** Current SpeechBubble text (None = hidden) */
+  speechText: Option<string>
   /** True when position was manually overridden by drag (visual only) */
   isManualOverride: boolean
 }
@@ -94,7 +95,7 @@ function enrichAgent(raw: RawAgent): AgentOfficeData {
     zoneId,
     position,
     color: getAgentColor(raw.id),
-    speechText: null,
+    speechText: None,
     isManualOverride: false,
   }
 }
@@ -156,14 +157,14 @@ function reducer(state: OfficeState, action: Action): OfficeState {
       return {
         ...state,
         agents: state.agents.map((a) =>
-          a.id === action.agentId ? { ...a, speechText: action.text } : a
+          a.id === action.agentId ? { ...a, speechText: Some(action.text) } : a
         ),
       }
 
     case 'AGENT_SPEECH_CLEAR':
       return {
         ...state,
-        agents: state.agents.map((a) => (a.id === action.agentId ? { ...a, speechText: null } : a)),
+        agents: state.agents.map((a) => (a.id === action.agentId ? { ...a, speechText: None } : a)),
       }
 
     case 'AGENT_ZONE_OVERRIDE':
