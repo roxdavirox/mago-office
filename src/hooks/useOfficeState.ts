@@ -228,7 +228,8 @@ export interface UseOfficeStateReturn extends Omit<OfficeState, 'overrides'> {
 
 export function useOfficeState(): UseOfficeStateReturn {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
-  const [retryCount, setRetryCount] = useState(0)
+  // retryKey é incrementado pelo botão "Retry" da UI para re-disparar o fetch
+  const [retryKey, setRetryKey] = useState(0)
 
   // Keep refs of speech bubble timers per agent for cleanup
   const speechTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -251,11 +252,13 @@ export function useOfficeState(): UseOfficeStateReturn {
     dispatch({ type: 'AGENT_ZONE_CLEAR_OVERRIDE', agentId })
   }, [])
 
+  // retry manual — usado pelo botão da UI; fetchAgents já faz 3 tentativas automáticas
   const retry = useCallback(() => {
-    setRetryCount((c) => c + 1)
+    setRetryKey((k) => k + 1)
   }, [])
 
   // ── Initial load via REST (or mock) ─────────────────────────────────────
+  // fetchAgents já faz retry automático (3×, backoff 2×) e timeout de 8s (#116)
   useEffect(() => {
     if (IS_MOCK_MODE) {
       dispatch({ type: 'AGENTS_LOADED', agents: MOCK_AGENTS })
@@ -278,7 +281,7 @@ export function useOfficeState(): UseOfficeStateReturn {
     return () => {
       controller.abort()
     }
-  }, [retryCount])
+  }, [retryKey])
 
   // ── Socket events ───────────────────────────────────────────────────────
   useEffect(() => {
