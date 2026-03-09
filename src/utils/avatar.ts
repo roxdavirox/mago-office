@@ -1,4 +1,4 @@
-import { pipe } from '@roxdavirox/fp-core'
+import { pipe } from '@tecnomancy/alchemy'
 
 /**
  * Color palette for human avatars.

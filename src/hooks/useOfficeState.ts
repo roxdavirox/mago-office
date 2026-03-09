@@ -8,9 +8,9 @@ import type {
 } from '../services/socket'
 import { getAgentZone, getAgentColor } from '../data/office-layout'
 import { MOCK_AGENTS } from '../data/mock-agents'
-import { type Option, Some, None, fromNullable, unwrapOptionOr } from '@roxdavirox/fp-core/option'
-import { isString, isNotEmpty } from '@roxdavirox/fp-core/predicates'
-import { pick, merge } from '@roxdavirox/fp-core/object'
+import { type Option, Some, None, fromNullable, unwrapOptionOr } from '@tecnomancy/alchemy/option'
+import { isString, isNotEmpty } from '@tecnomancy/alchemy/predicates'
+import { pick, merge } from '@tecnomancy/alchemy/object'
 
 const IS_MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true'
 

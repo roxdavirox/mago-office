@@ -3,7 +3,7 @@ import { EventBus } from '../EventBus'
 import { AgentSprite, registerAgentAnimations } from '../objects/AgentSprite'
 import type { AgentOfficeData } from '../../hooks/useOfficeState'
 import { getAgentColor } from '../../constants/agent'
-import { type Option, Some, None, isSome } from '@roxdavirox/fp-core/option'
+import { type Option, Some, None, isSome } from '@tecnomancy/alchemy/option'
 
 /**
  * OfficeScene — cena principal do jogo (#88 → #92).

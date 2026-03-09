@@ -1,5 +1,5 @@
-import { pipe } from '@roxdavirox/fp-core'
-import { type Option, Some, None, mapOption, unwrapOptionOr } from '@roxdavirox/fp-core/option'
+import { pipe } from '@tecnomancy/alchemy'
+import { type Option, Some, None, mapOption, unwrapOptionOr } from '@tecnomancy/alchemy/option'
 
 export interface Zone {
   id: string

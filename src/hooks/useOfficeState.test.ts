@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { Ok, Err, type Result } from '@roxdavirox/fp-core/result'
-import { Some, isSome, isNone } from '@roxdavirox/fp-core/option'
+import { Ok, Err, type Result } from '@tecnomancy/alchemy/result'
+import { Some, isSome, isNone } from '@tecnomancy/alchemy/option'
 import type { RawAgent } from './useOfficeState'
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────

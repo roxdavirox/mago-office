@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { None } from '@roxdavirox/fp-core/option'
+import { None } from '@tecnomancy/alchemy/option'
 
 // vi.hoisted garante que mockBus existe antes do hoist de vi.mock
 const { mockBus, listeners } = vi.hoisted(() => {
