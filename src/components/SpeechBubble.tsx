@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { type Option, isSome } from '@roxdavirox/fp-core/option'
+import { type Option, isSome } from '@tecnomancy/alchemy'
 
 interface SpeechBubbleProps {
   text: Option<string>

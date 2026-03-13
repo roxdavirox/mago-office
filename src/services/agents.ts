@@ -1,5 +1,5 @@
-import { Ok, Err, type Result } from '@roxdavirox/fp-core/result'
-import { pipeAsync, retry, timeout } from '@roxdavirox/fp-core/async'
+import { Ok, Err, type Result } from '@tecnomancy/alchemy/result'
+import { pipeAsync, retry, timeout } from '@tecnomancy/alchemy/async'
 import type { RawAgent } from '../hooks/useOfficeState'
 
 const AGENTS_URL = `${import.meta.env.VITE_MAGO_BACKEND_URL ?? 'http://localhost:3002'}/api/dashboard/agents`

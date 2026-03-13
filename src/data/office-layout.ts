@@ -1,5 +1,5 @@
-import { pipe } from '@roxdavirox/fp-core'
-import { type Option, Some, None, fromNullable, mapOption, unwrapOptionOr } from '@roxdavirox/fp-core/option'
+import { pipe } from '@tecnomancy/alchemy'
+import { type Option, Some, None, mapOption, unwrapOptionOr } from '@tecnomancy/alchemy/option'
 
 export interface Zone {
   id: string
@@ -79,48 +79,6 @@ export const ZONE_BY_ID = Object.fromEntries(OFFICE_ZONES.map((z) => [z.id, z]))
   string,
   Zone
 >
-
-/**
- * Offsets within a zone by agent index (0-based).
- * Values in % relative to the zone (0–100).
- * Guarantees anti-overlap for up to 3 agents.
- */
-const AGENT_ZONE_OFFSETS = [
-  { x: 25, y: 40 }, // rx-architect (Claude)
-  { x: 50, y: 40 }, // rx-backend   (Gemini)
-  { x: 75, y: 40 }, // rx-orchestrator (OpenCode)
-]
-
-const DEFAULT_OFFSET = { x: 50, y: 50 }
-
-export interface AgentPosition {
-  /** % from left of the canvas */
-  x: number
-  /** % from top of the canvas */
-  y: number
-}
-
-const DEFAULT_POSITION: AgentPosition = { x: 50, y: 50 }
-
-/**
- * Calculates the absolute position (% of canvas) of an agent within its zone,
- * using the agent index to avoid overlap.
- *
- * @param zoneId      ID of the zone where the agent is located
- * @param agentIndex  0-based agent index (0=agent-1, 1=agent-2, 2=agent-3)
- */
-export const getAgentPosition = (zoneId: string, agentIndex: number): AgentPosition =>
-  pipe(
-    fromNullable(ZONE_BY_ID[zoneId]),
-    mapOption((zone) => {
-      const offset = AGENT_ZONE_OFFSETS[agentIndex] ?? DEFAULT_OFFSET
-      return {
-        x: zone.x + (zone.width * offset.x) / 100,
-        y: zone.y + (zone.height * offset.y) / 100,
-      }
-    }),
-    unwrapOptionOr(DEFAULT_POSITION),
-  )
 
 // Re-exported from constants/agent to maintain compatibility with existing imports
 export { AGENT_COLORS, DEFAULT_AGENT_COLOR, getAgentColor } from '../constants/agent'

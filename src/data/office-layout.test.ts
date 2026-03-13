@@ -5,7 +5,6 @@ import {
   AGENT_COLORS,
   getAgentColor,
   getAgentZone,
-  getAgentPosition,
   DEFAULT_AGENT_COLOR,
 } from './office-layout'
 
@@ -107,50 +106,3 @@ describe('getAgentZone', () => {
   })
 })
 
-describe('getAgentPosition', () => {
-  it('calculates position within zone for agent-1 (index 0)', () => {
-    // dev-zone: x=2, y=5, width=28, height=30
-    // offset[0] = { x:25, y:40 } → x = 2 + 28*0.25 = 9, y = 5 + 30*0.40 = 17
-    const pos = getAgentPosition('dev-zone', 0)
-    expect(pos.x).toBe(9)
-    expect(pos.y).toBe(17)
-  })
-
-  it('calculates position within zone for agent-2 (index 1)', () => {
-    // dev-zone: x=2, y=5, width=28, height=30
-    // offset[1] = { x:50, y:40 } → x = 2 + 28*0.50 = 16, y = 5 + 30*0.40 = 17
-    const pos = getAgentPosition('dev-zone', 1)
-    expect(pos.x).toBe(16)
-    expect(pos.y).toBe(17)
-  })
-
-  it('calculates position within zone for agent-3 (index 2)', () => {
-    // dev-zone: x=2, y=5, width=28, height=30
-    // offset[2] = { x:75, y:40 } → x = 2 + 28*0.75 = 23, y = 5 + 30*0.40 = 17
-    const pos = getAgentPosition('dev-zone', 2)
-    expect(pos.x).toBe(23)
-    expect(pos.y).toBe(17)
-  })
-
-  it('returns center position for unknown zone', () => {
-    const pos = getAgentPosition('nonexistent-zone', 0)
-    expect(pos).toEqual({ x: 50, y: 50 })
-  })
-
-  it('uses default offset for out-of-range index', () => {
-    // index 99 does not exist → default offset { x:50, y:50 }
-    // dev-zone: x=2, y=5, width=28, height=30 → x=2+14=16, y=5+15=20
-    const pos = getAgentPosition('dev-zone', 99)
-    expect(pos.x).toBe(16)
-    expect(pos.y).toBe(20)
-  })
-
-  it('each agent has a distinct horizontal position in the same zone', () => {
-    const p0 = getAgentPosition('coffee-corner', 0)
-    const p1 = getAgentPosition('coffee-corner', 1)
-    const p2 = getAgentPosition('coffee-corner', 2)
-    expect(p0.x).not.toBe(p1.x)
-    expect(p1.x).not.toBe(p2.x)
-    expect(p0.x).not.toBe(p2.x)
-  })
-})

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { None, Some } from '@roxdavirox/fp-core/option'
+import { None, Some } from '@tecnomancy/alchemy'
 import { SpeechBubble } from './SpeechBubble'
 
 describe('SpeechBubble', () => {

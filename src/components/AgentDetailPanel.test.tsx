@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { None } from '@roxdavirox/fp-core/option'
+import { None } from '@tecnomancy/alchemy'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
@@ -52,10 +52,8 @@ const mockAgent: AgentOfficeData = {
   status: 'working',
   currentTask: 'Reviewing PR #44',
   zoneId: 'dev-zone',
-  position: { x: 50, y: 50 },
   color: '#8b5cf6',
   speechText: None,
-  isManualOverride: false,
 }
 
 describe('AgentDetailPanel', () => {

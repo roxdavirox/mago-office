@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@roxdavirox/fp-core':
+      '@tecnomancy/alchemy':
         specifier: ^0.1.0
         version: 0.1.0
       framer-motion:
@@ -838,12 +838,12 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@roxdavirox/fp-core@0.1.0':
-    resolution: {integrity: sha512-+vaL41iGdXz7cG+uIGlETBVoN8oSBu4sI5ZxqrRZkHdXqv+dWROwmqFx5QpBll7mT8W03FMBTDdU7HmgqXLBBA==}
-    engines: {node: '>=18'}
-
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
+
+  '@tecnomancy/alchemy@0.1.0':
+    resolution: {integrity: sha512-0Ej8zk65hX8utqK2gLC5cYmkrViXuVk9d+UXfSOHhJpVvZZet7W0IE1Q0jo7RbOzlGuBkRWRC62We93aBAPsqQ==}
+    engines: {node: '>=18'}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -3268,9 +3268,9 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.59.0':
     optional: true
 
-  '@roxdavirox/fp-core@0.1.0': {}
-
   '@socket.io/component-emitter@3.1.2': {}
+
+  '@tecnomancy/alchemy@0.1.0': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:
