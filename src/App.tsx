@@ -8,11 +8,13 @@ import { getSocket } from './services/socket'
 import { PhaserGame } from './game/PhaserGame'
 import type { PhaserGameRef } from './game/PhaserGame'
 import { usePhaserBridge } from './hooks/usePhaserBridge'
+import { useHumanSocket } from './hooks/useHumanSocket'
 
 export function App() {
   useSocket()
   const { agents, users, isLoading, error, retry } = useOfficeState()
   usePhaserBridge(agents)
+  useHumanSocket()
 
   const overlayRef = useRef<HTMLDivElement>(null)
   const phaserRef = useRef<PhaserGameRef>(null)
@@ -31,7 +33,6 @@ export function App() {
             key={user.socketId}
             user={user}
             isMe={user.socketId === mySocketId}
-            canvasRef={overlayRef}
           />
         ))}
         <OfficeOverlay isLoading={isLoading} error={error} onRetry={retry} />

@@ -1,18 +1,13 @@
-import { memo, useRef, useCallback } from 'react'
+import { memo } from 'react'
 import { motion } from 'framer-motion'
-import { getSocket } from '../services/socket'
-import { hashColor, initials, toPercent } from '../utils/avatar'
+import { hashColor, initials } from '../utils/avatar'
 import type { UserOfficeData } from '../hooks/useOfficeState'
 
 interface HumanAvatarProps {
   user: UserOfficeData
-  /** Whether this is the current user's own avatar (draggable) */
+  /** Whether this is the current user's own avatar */
   isMe: boolean
-  /** Ref to the canvas element for calculating drag constraints */
-  canvasRef: React.RefObject<HTMLDivElement | null>
 }
-
-const EMIT_DEBOUNCE_MS = 100
 
 const STYLES = {
   nameStack: {
@@ -41,38 +36,19 @@ const STYLES = {
   } as React.CSSProperties,
 }
 
-export const HumanAvatar = memo(function HumanAvatar({ user, isMe, canvasRef }: HumanAvatarProps) {
+/**
+ * HumanAvatar — exibe avatar de usuários remotos na overlay React (#95).
+ *
+ * Movimento local agora é via HumanSprite no Phaser (#94).
+ * Este componente apenas renderiza a posição recebida via socket.
+ */
+export const HumanAvatar = memo(function HumanAvatar({ user, isMe }: HumanAvatarProps) {
   const color = hashColor(user.userId)
   const label = initials(user.name)
-  const lastEmitAt = useRef(0)
-
-  const handleDragEnd = useCallback(
-    (_: unknown, info: { point: { x: number; y: number } }) => {
-      if (!isMe) return
-
-      const canvas = canvasRef.current
-      if (!canvas) return
-
-      const rect = canvas.getBoundingClientRect()
-      const x = toPercent(info.point.x - rect.left, rect.width)
-      const y = toPercent(info.point.y - rect.top, rect.height)
-
-      // Debounce to avoid event flooding
-      const now = Date.now()
-      if (now - lastEmitAt.current < EMIT_DEBOUNCE_MS) return
-      lastEmitAt.current = now
-
-      getSocket().emit('office:user:move', { x, y })
-    },
-    [isMe, canvasRef]
-  )
 
   return (
     <motion.div
-      role={isMe ? 'button' : undefined}
-      aria-label={isMe ? `your avatar: ${user.name}, drag to move` : `user ${user.name}`}
-      aria-grabbed={isMe ? false : undefined}
-      tabIndex={isMe ? 0 : undefined}
+      aria-label={isMe ? `your avatar: ${user.name}` : `user ${user.name}`}
       style={{
         position: 'absolute',
         left: `${user.x}%`,
@@ -82,18 +58,11 @@ export const HumanAvatar = memo(function HumanAvatar({ user, isMe, canvasRef }: 
         flexDirection: 'column',
         alignItems: 'center',
         gap: 4,
-        cursor: isMe ? 'grab' : 'default',
         userSelect: 'none',
         zIndex: isMe ? 20 : 10,
       }}
-      // Smoothly animate to new position (other users)
       animate={{ left: `${user.x}%`, top: `${user.y}%` }}
       transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-      drag={isMe || undefined}
-      dragConstraints={canvasRef}
-      dragElastic={0.05}
-      whileDrag={{ scale: 1.12, cursor: 'grabbing', zIndex: 1000 }}
-      onDragEnd={handleDragEnd}
     >
       {/* Circular avatar */}
       <div
