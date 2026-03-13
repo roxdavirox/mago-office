@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { None } from '@roxdavirox/fp-core/option'
+import { None } from '@tecnomancy/alchemy'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import type { AgentOfficeData } from '../hooks/useOfficeState'
 
