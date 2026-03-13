@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { EventBus } from '../EventBus'
 import { AgentSprite, registerAgentAnimations } from '../objects/AgentSprite'
+import { HumanSprite } from '../objects/HumanSprite'
 import type { AgentOfficeData } from '../../hooks/useOfficeState'
 import { getAgentColor } from '../../constants/agent'
 import { type Option, Some, None, isSome } from '@tecnomancy/alchemy/option'
@@ -30,6 +31,7 @@ export class OfficeScene extends Phaser.Scene {
   private zoneRects = new Map<string, Phaser.Geom.Rectangle>()
   private agentSprites = new Map<string, AgentSprite>()
   private readonly onAgentsUpdated = (agents: AgentOfficeData[]) => this.syncAgents(agents)
+  private humanSprite: HumanSprite | null = null
   wallsLayer: Phaser.Tilemaps.TilemapLayer | null = null
   furnitureLayer: Phaser.Tilemaps.TilemapLayer | null = null
 
@@ -55,12 +57,26 @@ export class OfficeScene extends Phaser.Scene {
     this.setupCamera(map)
     registerAgentAnimations(this)
 
+    // HumanSprite no lobby (centro do mapa)
+    const spawnX = map.widthInPixels / 2
+    const spawnY = map.heightInPixels - 48
+    this.humanSprite = new HumanSprite(this, spawnX, spawnY)
+    this.humanSprite.setupCamera(
+      this.cameras.main,
+      this.wallsLayer,
+      this.furnitureLayer,
+    )
+
     EventBus.on('agents-updated', this.onAgentsUpdated)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       EventBus.off('agents-updated', this.onAgentsUpdated)
     })
 
     EventBus.emit('scene-ready', this)
+  }
+
+  update(time: number): void {
+    this.humanSprite?.handleInput(time)
   }
 
   /** Sincroniza AgentSprites com a lista de agentes do React. */
