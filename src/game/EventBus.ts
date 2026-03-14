@@ -12,11 +12,17 @@ import type { AgentOfficeData } from '../hooks/useOfficeState'
  *   agent-speech-position — posição em tela do balão de fala
  *   human-moved      — posição do HumanSprite (para emitir via socket)
  */
+export interface SpriteScreenPos {
+  x: number
+  y: number
+}
+
 export interface OfficeEventMap {
   'scene-ready': [scene: Phaser.Scene]
   'agents-updated': [agents: AgentOfficeData[]]
   'agent-speech': [agentId: string, text: string]
   'agent-speech-position': [agentId: string, x: number, y: number]
+  'sprite-positions': [positions: Map<string, SpriteScreenPos>]
   'human-moved': [x: number, y: number]
 }
 

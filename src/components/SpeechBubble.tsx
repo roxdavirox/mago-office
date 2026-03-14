@@ -5,16 +5,15 @@ import { type Option, isSome } from '@tecnomancy/alchemy'
 interface SpeechBubbleProps {
   text: Option<string>
   color: string
+  /** Screen position (pixels) — when set, renders at fixed position */
+  screenX?: number
+  screenY?: number
 }
 
 const MAX_LENGTH = 40
 
 const STYLES = {
   bubble: {
-    position: 'absolute',
-    bottom: 'calc(100% + 8px)',
-    left: '50%',
-    transform: 'translateX(-50%)',
     maxWidth: 180,
     padding: '5px 8px',
     background: 'rgba(15, 23, 42, 0.92)',
@@ -53,12 +52,36 @@ const variants = {
   exit: { scale: 0, opacity: 0, transition: { duration: 0.2 } },
 }
 
-export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBubbleProps) {
+/** Offset above the sprite (pixels) */
+const BUBBLE_OFFSET_Y = 28
+
+export const SpeechBubble = memo(function SpeechBubble({
+  text,
+  color,
+  screenX,
+  screenY,
+}: SpeechBubbleProps) {
   const content = isSome(text)
     ? text.value.length > MAX_LENGTH
       ? `${text.value.slice(0, MAX_LENGTH)}…`
       : text.value
     : null
+
+  const isPositioned = screenX !== undefined && screenY !== undefined
+
+  const positionStyle: React.CSSProperties = isPositioned
+    ? {
+        position: 'fixed',
+        left: screenX,
+        top: screenY - BUBBLE_OFFSET_Y,
+        transform: 'translate(-50%, -100%)',
+      }
+    : {
+        position: 'absolute',
+        bottom: 'calc(100% + 8px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+      }
 
   return (
     <AnimatePresence>
@@ -69,7 +92,7 @@ export const SpeechBubble = memo(function SpeechBubble({ text, color }: SpeechBu
           initial="hidden"
           animate="visible"
           exit="exit"
-          style={{ ...STYLES.bubble, border: `1px solid ${color}80` }}
+          style={{ ...STYLES.bubble, ...positionStyle, border: `1px solid ${color}80` }}
         >
           {content}
           {/* Downward-pointing arrow */}
