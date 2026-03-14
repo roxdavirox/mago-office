@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { EventBus } from '../EventBus'
+import { EventBus, type SpriteScreenPos } from '../EventBus'
 import { AgentSprite, registerAgentAnimations } from '../objects/AgentSprite'
 import { HumanSprite } from '../objects/HumanSprite'
 import type { AgentOfficeData } from '../../hooks/useOfficeState'
@@ -77,6 +77,23 @@ export class OfficeScene extends Phaser.Scene {
 
   update(time: number): void {
     this.humanSprite?.handleInput(time)
+    this.emitSpritePositions()
+  }
+
+  /** Converte posições de sprites do mundo para coordenadas de tela e emite via EventBus. */
+  private emitSpritePositions(): void {
+    if (this.agentSprites.size === 0) return
+
+    const cam = this.cameras.main
+    const positions = new Map<string, SpriteScreenPos>()
+
+    for (const [id, sprite] of this.agentSprites) {
+      const sx = (sprite.x - cam.worldView.x) * cam.zoom + cam.x
+      const sy = (sprite.y - cam.worldView.y) * cam.zoom + cam.y
+      positions.set(id, { x: Math.round(sx), y: Math.round(sy) })
+    }
+
+    EventBus.emit('sprite-positions', positions)
   }
 
   /** Sincroniza AgentSprites com a lista de agentes do React. */
